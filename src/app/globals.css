@@ -269,6 +269,11 @@ a { color: inherit; }
   box-shadow: 0 0 0 3px var(--brand-soft);
 }
 .input::placeholder { color: var(--text-4); }
+
+.trailing-icon-btn:hover {
+  background: var(--surface-2);
+  color: var(--text-2);
+}
 .textarea { min-height: 88px; resize: vertical; font-family: var(--font-ui); }
 
 /* =========================================================

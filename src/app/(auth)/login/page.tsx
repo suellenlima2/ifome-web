@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { User, Eye, AlertCircle } from 'lucide-react';
+import { User, Eye, EyeOff, Lock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
 import { TextInput } from '@/components/ui/TextInput';
@@ -18,6 +18,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [rememberMe, setRememberMe] = useState(true);
   const [authError, setAuthError] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const loginForm = useForm<LoginForm>({ resolver: zodResolver(loginSchema), defaultValues: { email: '', password: '' } });
 
@@ -115,7 +116,15 @@ export default function LoginPage() {
         <TextInput icon={User} type="email" placeholder="nome@ifal.edu.br" {...loginForm.register('email')} />
       </Field>
       <Field label="Senha" error={loginForm.formState.errors.password?.message}>
-        <TextInput icon={Eye} type="password" placeholder="••••••••" {...loginForm.register('password')} />
+        <TextInput 
+          icon={Lock} 
+          type={showPassword ? 'text' : 'password'} 
+          placeholder="••••••••" 
+          trailingIcon={showPassword ? EyeOff : Eye}
+          onTrailingIconClick={() => setShowPassword(!showPassword)}
+          trailingIconAriaLabel={showPassword ? 'Esconder senha' : 'Ver senha'}
+          {...loginForm.register('password')} 
+        />
       </Field>
       <div className="between">
         <Toggle on={rememberMe} onChange={setRememberMe} label="Lembrar-me" />
