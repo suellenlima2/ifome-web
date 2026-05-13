@@ -70,7 +70,6 @@ export function PublicTopnav({ loggedIn = true, userName = 'João Silva' }: Publ
       ) : (
         <>
           <Link href="/login"><Button variant="ghost" size="sm">Entrar</Button></Link>
-          <Link href="/login"><Button variant="primary" size="sm">Cadastrar</Button></Link>
         </>
       )}
     </header>
