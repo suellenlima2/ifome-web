@@ -23,9 +23,8 @@ export function AdminTopbar({ title, sub, primaryLabel, onPrimary, onSearch }: A
       </div>
 
       <div className="searchbox">
-        <Search size={16} />
         <input placeholder="Buscar pratos, alunos, produtos…" onChange={e => onSearch?.(e.target.value)} />
-        <span className="text-xs muted" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 6px' }}>⌘K</span>
+        <Search size={16} />
       </div>
 
       <button className="icon-btn" onClick={() => router.push('/admin/alertas')}>
