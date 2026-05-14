@@ -7,14 +7,16 @@ import { Bell } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils/cn';
+import { useNotifications } from '@/hooks/useNotifications';
+import { LogIn } from 'lucide-react';
 
 const memberLinks = [
-  { href: '/student/home',     label: 'Início'   },
+  { href: '/student/home', label: 'Início' },
   { href: '/student/cardapio', label: 'Cardápio' },
 ];
 
 const guestLinks = [
-  { href: '/guest',            label: 'Início'   },
+  { href: '/guest', label: 'Início' },
   { href: '/student/cardapio', label: 'Cardápio' },
 ];
 
@@ -27,6 +29,8 @@ export function PublicTopnav({ loggedIn = true, userName = 'João Silva' }: Publ
   const pathname = usePathname();
   const router = useRouter();
   const navLinks = loggedIn ? memberLinks : guestLinks;
+  const { data: notifData } = useNotifications();
+  const hasUnread = loggedIn && (notifData?.unreadCount ?? 0) > 0;
 
   return (
     <header className="topnav">
@@ -34,11 +38,11 @@ export function PublicTopnav({ loggedIn = true, userName = 'João Silva' }: Publ
         <Image
           src="/logo-ifome.png"
           alt="Logo IFome"
-          width={50}  
-          height={50} 
+          width={50}
+          height={50}
           style={{ objectFit: 'contain' }}
         />
-     </div>
+      </div>
 
       <nav className="topnav__links">
         {navLinks.map(link => (
@@ -58,7 +62,7 @@ export function PublicTopnav({ loggedIn = true, userName = 'João Silva' }: Publ
       {loggedIn && (
         <button className="icon-btn" onClick={() => router.push('/student/notificacoes')}>
           <Bell size={18} />
-          <span className="icon-btn__dot" />
+          {hasUnread && <span className="icon-btn__dot" />}
         </button>
       )}
 
@@ -69,7 +73,7 @@ export function PublicTopnav({ loggedIn = true, userName = 'João Silva' }: Publ
         </Link>
       ) : (
         <>
-          <Link href="/login"><Button variant="ghost" size="sm">Entrar</Button></Link>
+          <Link href="/login"><Button variant="primary" size="sm" icon={LogIn}>Entrar</Button></Link>
         </>
       )}
     </header>
