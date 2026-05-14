@@ -12,6 +12,8 @@ import { AdminTopbar } from '@/components/layout/AdminTopbar';
 import { Avatar } from '@/components/ui/Avatar';
 import { Tag } from '@/components/ui/Tag';
 import { useDashboard } from '@/hooks/useDashboard';
+import { useSearchParams } from 'next/navigation';
+import { cn } from '@/utils/cn';
 import type { RecentConfirmation } from '@/types';
 
 function exportCSV(rows: RecentConfirmation[]) {
@@ -26,9 +28,11 @@ function exportCSV(rows: RecentConfirmation[]) {
   URL.revokeObjectURL(url);
 }
 
-export default function AdminConfirmacoesPage() {
+function ConfirmationsContent() {
   const { data, isLoading } = useDashboard();
+  const searchParams = useSearchParams();
   const [typeFilter, setTypeFilter] = useState<'all' | 'Padrão' | 'Adaptada'>('all');
+  const [mealFilter, setMealFilter] = useState<string>(searchParams.get('meal') || 'all');
   const [search, setSearch] = useState('');
 
   const { meals, total, capacity, confirmations } = useMemo(() => {
@@ -43,6 +47,7 @@ export default function AdminConfirmacoesPage() {
   const q = search.toLowerCase();
   const filtered = confirmations
     .filter(r => typeFilter === 'all' || r.type === typeFilter)
+    .filter(r => mealFilter === 'all' || r.meal === mealFilter)
     .filter(r => !q || r.name.toLowerCase().includes(q) || r.mat.toLowerCase().includes(q));
 
   if (isLoading) return (
@@ -64,14 +69,22 @@ export default function AdminConfirmacoesPage() {
         <div className="col gap-20">
           <div className="row gap-8" style={{ flexWrap: 'wrap' }}>
             <Button variant="secondary" size="sm" icon={Calendar} onClick={() => toast.info('Filtro por data aplicado.')}>Hoje · 09/05</Button>
-            <Button variant="secondary" size="sm" icon={Filter} onClick={() => toast.info('Filtro aplicado.')}>Tipo: Todos</Button>
+            <Button variant="secondary" size="sm" icon={Filter} onClick={() => toast.info('Filtro aplicado.')}>Tipo: {typeFilter === 'all' ? 'Todos' : typeFilter}</Button>
+            {mealFilter !== 'all' && (
+              <Button variant="primary" size="sm" onClick={() => setMealFilter('all')}>Refeição: {mealFilter} ✕</Button>
+            )}
             <span className="spacer" />
             <Button variant="secondary" size="sm" icon={Download} onClick={() => exportCSV(filtered)}>Exportar CSV</Button>
           </div>
 
           <div className="grid-3">
             {meals.map(m => (
-              <div key={m.key} className="card card--padded col gap-12">
+              <div 
+                key={m.key} 
+                className={cn("card card--padded col gap-12", mealFilter === m.label && "card--active")}
+                onClick={() => setMealFilter(f => f === m.label ? 'all' : m.label)}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="between">
                   <span className="weight-700">{m.label}</span>
                   <span className="text-xs muted">{m.time}</span>
@@ -131,5 +144,15 @@ export default function AdminConfirmacoesPage() {
         </div>
       </div>
     </>
+  );
+}
+
+import { Suspense } from 'react';
+
+export default function AdminConfirmacoesPage() {
+  return (
+    <Suspense fallback={<div className="center" style={{ height: '100%' }}>Carregando...</div>}>
+      <ConfirmationsContent />
+    </Suspense>
   );
 }

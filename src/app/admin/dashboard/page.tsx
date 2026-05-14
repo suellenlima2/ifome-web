@@ -66,10 +66,10 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="grid-4">
-            <Stat label="Confirmados hoje" value={almoco.confirmados} delta="+12% vs média" icon={CheckCircle} sub="almoço" />
-            <Stat label="Capacidade usada" value={`${Math.round(almoco.confirmados / almoco.capacidade * 100)}%`} sub={`${almoco.confirmados}/${almoco.capacidade} pratos`} icon={PieChart} delta="Saudável" />
-            <Stat label="Itens em falta" value={stock.filter(s => s.status !== 'ok').length} delta="3 críticos" deltaTone="down" icon={Box} sub="estoque" />
-            <Stat label="Alertas ativos" value={alerts.length} delta="2 não vistos" deltaTone="down" icon={AlertTriangle} sub="abertos" />
+            <Stat label="Confirmados hoje" value={almoco.confirmados} delta="+12% vs média" icon={CheckCircle} sub="almoço" href="/admin/confirmacoes?meal=Almoço" />
+            <Stat label="Capacidade usada" value={`${Math.round(almoco.confirmados / almoco.capacidade * 100)}%`} sub={`${almoco.confirmados}/${almoco.capacidade} pratos`} icon={PieChart} delta="Saudável" href="/admin/confirmacoes" />
+            <Stat label="Itens em falta" value={stock.filter(s => s.status !== 'ok').length} delta="3 críticos" deltaTone="down" icon={Box} sub="estoque" href="/admin/estoque" />
+            <Stat label="Alertas ativos" value={alerts.length} delta="2 não vistos" deltaTone="down" icon={AlertTriangle} sub="abertos" href="/admin/alertas" />
           </div>
 
           <div className="grid-2-1">
