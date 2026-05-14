@@ -40,22 +40,22 @@ export default function LoginPage() {
   return (
     <div className="login-shell">
       <div className="login-brand">
-        <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', width: '100%', marginBottom: '16px', marginTop: '70px' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', width: '100%', marginBottom: '16px', marginTop: '70px', gap: '0%'}}>
           
           <Image
             src="/logo-ifome2.png"
             alt="Ícone do Restaurante Universitário"
-            width={200}  
+            width={200}
             height={200}
-            style={{ objectFit: 'contain', marginRight: '10px' }} 
+            style={{ objectFit: 'contain', width: '38%', maxWidth: '200px', height: 'auto', flexShrink: 1 }}
           />
           
           <Image
             src="/ifome.png" 
             alt="Texto IFome"
-            width={300} 
-            height={150} 
-            style={{ objectFit: 'contain' }}
+            width={300}
+            height={150}
+            style={{ objectFit: 'contain', width: '58%', maxWidth: '300px', height: 'auto', flexShrink: 1 }}
           /> 
         </div>
 
