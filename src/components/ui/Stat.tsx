@@ -1,6 +1,7 @@
 import { TrendingUp } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { type LucideIcon } from 'lucide-react';
+import Link from 'next/link';
 
 interface StatProps {
   label: string;
@@ -9,11 +10,12 @@ interface StatProps {
   deltaTone?: 'up' | 'down';
   icon?: LucideIcon;
   sub?: string;
+  href?: string;
 }
 
-export function Stat({ label, value, delta, deltaTone = 'up', icon: Icon, sub }: StatProps) {
-  return (
-    <div className="stat">
+export function Stat({ label, value, delta, deltaTone = 'up', icon: Icon, sub, href }: StatProps) {
+  const content = (
+    <div className={cn("stat", href && "stat--clickable")}>
       <div className="between" style={{ marginBottom: 2 }}>
         <span className="stat__label">{label}</span>
         {Icon && (
@@ -34,4 +36,14 @@ export function Stat({ label, value, delta, deltaTone = 'up', icon: Icon, sub }:
       </div>
     </div>
   );
+
+  if (href) {
+    return (
+      <Link href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }

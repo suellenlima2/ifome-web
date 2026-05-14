@@ -288,6 +288,8 @@ a { color: inherit; }
 }
 .card--padded { padding: 20px; }
 .card--flush { box-shadow: none; }
+.card--active { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand), var(--sh-1); background: var(--brand-soft); }
+[data-theme="dark"] .card--active { background: var(--brand-soft); border-color: var(--brand); }
 
 /* =========================================================
    Tags
@@ -348,6 +350,18 @@ a { color: inherit; }
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+.stat--clickable {
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.stat--clickable:hover {
+  border-color: var(--brand);
+  box-shadow: var(--sh-2);
+  transform: translateY(-2px);
+}
+.stat--clickable:active {
+  transform: translateY(0);
 }
 .stat__label { color: var(--text-3); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; }
 .stat__value { font-family: var(--font-data); font-size: 32px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; line-height: 1; }
