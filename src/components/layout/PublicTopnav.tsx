@@ -7,7 +7,6 @@ import { Bell } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils/cn';
-import { useNotifications } from '@/hooks/useNotifications';
 import { LogIn } from 'lucide-react';
 
 const memberLinks = [
@@ -29,8 +28,6 @@ export function PublicTopnav({ loggedIn = true, userName = 'João Silva' }: Publ
   const pathname = usePathname();
   const router = useRouter();
   const navLinks = loggedIn ? memberLinks : guestLinks;
-  const { data: notifData } = useNotifications();
-  const hasUnread = loggedIn && (notifData?.unreadCount ?? 0) > 0;
 
   return (
     <header className="topnav">
@@ -62,7 +59,7 @@ export function PublicTopnav({ loggedIn = true, userName = 'João Silva' }: Publ
       {loggedIn && (
         <button className="icon-btn" onClick={() => router.push('/student/notificacoes')}>
           <Bell size={18} />
-          {hasUnread && <span className="icon-btn__dot" />}
+          <span className="icon-btn__dot" />
         </button>
       )}
 
