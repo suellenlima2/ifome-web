@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, Check, LogOut, History, Pencil } from 'lucide-react';
 import { useMemo, useRef, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation'; // Importação correta para navegação
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { Field } from '@/components/ui/Field';
@@ -21,6 +22,7 @@ import { toast } from 'react-toastify';
 import type { RestrictionKey } from '@/types';
 
 export default function PerfilPage() {
+  const router = useRouter();
   const { mutate: doLogout } = useLogout();
   const { data: profile, isLoading } = useProfile();
   const { data: history } = useMealHistory();
@@ -56,7 +58,22 @@ export default function PerfilPage() {
   };
 
   const onSubmit = (data: ProfileForm) => {
-    updateProfile({ ...data, restrictions });
+    // Salvando os dados normalmente
+    updateProfile(
+      { ...data, restrictions },
+      {
+        onSuccess: () => {
+          toast.success('Alterações salvas!');
+          // O push do router avisa o Next.js que a página mudou, 
+          // o que costuma disparar a atualização dos dados sem quebrar o login.
+          router.push('/student/home');
+          router.refresh(); 
+        },
+        onError: () => {
+          toast.error('Erro ao salvar perfil.');
+        }
+      }
+    );
   };
 
   if (isLoading) return (
