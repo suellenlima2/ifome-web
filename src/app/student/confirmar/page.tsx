@@ -6,9 +6,11 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, Check, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton'; // Importe o Skeleton
 import { RestrictionChip } from '@/components/student/RestrictionChip';
 import { confirmationSchema, type ConfirmationForm } from '@/schemas/confirmationSchema';
 import { useConfirmMeal } from '@/hooks/useMenu';
+import { useProfile } from '@/hooks/useProfile'; // Importe o hook de perfil
 import { cn } from '@/utils/cn';
 
 const PERIODS = [
@@ -24,6 +26,7 @@ const TYPES = [
 
 export default function ConfirmarPage() {
   const router = useRouter();
+  const { data: profile, isLoading: isProfileLoading } = useProfile(); // Pegando dados do perfil
   const { mutate: confirm, isPending } = useConfirmMeal();
 
   const { control, handleSubmit, watch } = useForm<ConfirmationForm>({
@@ -106,11 +109,19 @@ export default function ConfirmarPage() {
             />
           </div>
 
+          {/* SESSÃO DE RESTRIÇÕES CORRIGIDA */}
           <div className="card card--padded col gap-8" style={{ background: 'var(--surface-2)', border: '1px dashed var(--border)' }}>
             <span className="weight-600 text-sm">Suas restrições aplicadas</span>
             <div className="row gap-6" style={{ flexWrap: 'wrap' }}>
-              <RestrictionChip k="lactoseFree" />
-              <RestrictionChip k="spicy" />
+              {isProfileLoading ? (
+                <Skeleton h={24} w={100} r={12} />
+              ) : profile?.restrictions && profile.restrictions.length > 0 ? (
+                profile.restrictions.map((res: string) => (
+                  <RestrictionChip key={res} k={res as any} />
+                ))
+              ) : (
+                <span className="text-xs muted">Nenhuma restrição cadastrada.</span>
+              )}
             </div>
             <Link href="/student/perfil">
               <span className="text-xs" style={{ color: 'var(--brand-text)', cursor: 'pointer' }}>Editar restrições no perfil →</span>
