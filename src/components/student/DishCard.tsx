@@ -1,14 +1,30 @@
-import Link from 'next/link';
+import { useState } from 'react';
 import { Utensils } from 'lucide-react';
 import { Tag } from '@/components/ui/Tag';
 import { RestrictionChip } from './RestrictionChip';
 import { getDishCategoryLabel } from '@/utils/formatDate';
+import { Dialog } from '@/components/ui/Dialog';
+import { DishDetails } from './DishDetails';
 import type { Dish } from '@/types';
 
 export function DishCard({ dish }: { dish: Dish }) {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <Link href={`/student/cardapio/${dish.id}`} style={{ textDecoration: 'none' }}>
-      <div className="card" style={{ overflow: 'hidden', cursor: 'pointer', height: '100%' }}>
+    <>
+      <div 
+        onClick={() => setIsOpen(true)}
+        className="card" 
+        style={{ 
+          overflow: 'hidden', 
+          cursor: 'pointer', 
+          height: '100%',
+          transition: 'transform 0.2s, box-shadow 0.2s'
+        }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setIsOpen(true); }}
+      >
         <div style={{
           height: 110,
           background: 'linear-gradient(135deg, var(--brand-soft) 0%, color-mix(in oklab, var(--brand) 16%, var(--surface)) 100%)',
@@ -24,10 +40,18 @@ export function DishCard({ dish }: { dish: Dish }) {
           <span className="weight-700">{dish.name}</span>
           <span className="text-xs muted" style={{ minHeight: 32 }}>{dish.desc}</span>
           <div className="row gap-6" style={{ flexWrap: 'wrap' }}>
-            {dish.tags.slice(0, 3).map(t => <RestrictionChip key={t} k={t} />)}
+            {dish.tags.slice(0, 5).map(t => <RestrictionChip key={t} k={t} />)}
           </div>
         </div>
       </div>
-    </Link>
+
+      <Dialog 
+        isOpen={isOpen} 
+        onClose={() => setIsOpen(false)} 
+        title={dish.name}
+      >
+        <DishDetails dish={dish} />
+      </Dialog>
+    </>
   );
 }
