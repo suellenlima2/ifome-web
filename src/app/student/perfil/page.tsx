@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, Check, LogOut, History, Pencil } from 'lucide-react';
+import { Check, LogOut, History, Pencil } from 'lucide-react';
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
@@ -84,11 +84,7 @@ export default function PerfilPage() {
       <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
         <div className="col gap-20" style={{ maxWidth: 920, margin: '0 auto', width: '100%', padding: '0 16px' }}>
           
-          <div className="row gap-12">
-            <Link href="/student/home">
-              <Button type="button" variant="ghost" size="sm" icon={ArrowLeft}>Início</Button>
-            </Link>
-          </div>
+
 
           <div className="card" style={{ overflow: 'hidden' }}>
             <div style={{ height: 100, background: 'linear-gradient(135deg, var(--green-700) 0%, var(--green-500) 100%)' }} />
