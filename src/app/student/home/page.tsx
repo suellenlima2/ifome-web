@@ -9,12 +9,32 @@ import { useTodayMenu, useTodayConfirmation, useCancelConfirmation } from '@/hoo
 
 function HomeSkeleton() {
   return (
-    <div className="col gap-24" style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <div className="col gap-4"><Skeleton w={120} h={12} /><Skeleton w={280} h={32} r={8} /></div>
+    <div className="col gap-24" style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
+      {/* 1. A Data de Hoje */}
+      <div className="col gap-4">
+        <Skeleton w={280} h={36} r={8} />
+      </div>
+      
+      {/* 2. Aviso da Coordenação */}
       <Skeleton h={80} r={14} />
+      
+      {/* 3. Bloco de Confirmação */}
       <Skeleton h={100} r={14} />
-      <div className="grid-3">
-        {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} h={200} r={14} />)}
+      
+      {/* 4. Cardápio do Dia */}
+      <div className="col gap-16">
+        <Skeleton w={180} h={24} r={6} />
+        <div className="col gap-24">
+          <div className="col gap-12">
+            <div className="between">
+              <Skeleton w={140} h={20} r={6} />
+              <Skeleton w={100} h={14} r={4} />
+            </div>
+            <div className="grid-3">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} h={200} r={14} />)}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -46,11 +66,12 @@ export default function StudentHomePage() {
 
   return (
     <div className="col gap-24" style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
+      {/* 1. A Data de Hoje */}
       <div className="col gap-4">
-        <span className="text-sm muted">{data!.date}</span>
-        <span className="h-page">Cardápio de hoje</span>
+        <span className="h-page">{data!.date}</span>
       </div>
 
+      {/* 2. Aviso da Coordenação */}
       <div className="banner">
         <span className="banner__icon" style={{ background: 'var(--brand-soft)', color: 'var(--brand-text)', borderRadius: 8 }}>
           <AlertCircle size={16} />
@@ -61,6 +82,7 @@ export default function StudentHomePage() {
         </div>
       </div>
 
+      {/* 3. Bloco de Confirmação */}
       <div className="card" style={{
         padding: 24,
         background: confirmed
@@ -98,9 +120,15 @@ export default function StudentHomePage() {
         </div>
       </div>
 
-      {data!.meals.map(meal => (
-        <MealSection key={meal.key} meal={meal} />
-      ))}
+      {/* 4. Cardápio do Dia */}
+      <div className="col gap-16">
+        <span className="h-section" style={{ fontSize: 20 }}>Cardápio de hoje</span>
+        <div className="col gap-24">
+          {data!.meals.map(meal => (
+            <MealSection key={meal.key} meal={meal} />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
