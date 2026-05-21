@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, Check, CheckCircle } from 'lucide-react';
@@ -26,12 +26,16 @@ const TYPES = [
 
 export default function ConfirmarPage() {
   const router = useRouter();
-  const { data: profile, isLoading: isProfileLoading } = useProfile(); // Pegando dados do perfil
+  const searchParams = useSearchParams();
+  const initialPeriod = searchParams.get('period') as 'cafe' | 'almoco' | 'jantar' | null;
+  const initialType = searchParams.get('type') as 'padrao' | 'adaptada' | null;
+  const { data: profile, isLoading: isProfileLoading } = useProfile(); 
   const { mutate: confirm, isPending } = useConfirmMeal();
 
   const { control, handleSubmit, watch } = useForm<ConfirmationForm>({
     resolver: zodResolver(confirmationSchema),
-    defaultValues: { period: 'almoco', type: 'padrao' },
+    defaultValues: { period: initialPeriod || 'almoco', type: initialType || 'padrao' 
+    },
   });
 
   const period = watch('period');
