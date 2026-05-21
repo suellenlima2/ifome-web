@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, type KeyboardEvent } from 'react';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Tag } from '@/components/ui/Tag';
 import { RestrictionChip } from '@/components/student/RestrictionChip';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { useWeekMenu } from '@/hooks/useMenu';
+import { Modal } from '@/components/ui/Modal';
+import { DishDetails } from '@/components/student/DishDetails';
+import { useDishById, useWeekMenu } from '@/hooks/useMenu';
 
 const FILTERS = [
   { k: null,          label: 'Todos'       },
@@ -19,13 +20,14 @@ const FILTERS = [
 
 export default function StudentCardapioPage() {
   const [filter, setFilter] = useState<string | null>(null);
+  const [selectedDishId, setSelectedDishId] = useState<string | null>(null);
   const { data: week, isLoading } = useWeekMenu(filter);
-  const router = useRouter();
+  const { data: selectedDish, isLoading: isDishLoading } = useDishById(selectedDishId ?? '');
 
-  const handleCardKeyDown = (event: React.KeyboardEvent, dishId: string) => {
+  const handleDishKeyDown = (event: KeyboardEvent, dishId: string) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      router.push(`/student/cardapio/${dishId}`);
+      setSelectedDishId(dishId);
     }
   };
 
@@ -103,41 +105,64 @@ export default function StudentCardapioPage() {
               {day.today && <Tag tone="green">Hoje</Tag>}
             </div>
             <div className={i === 0 ? 'cardapio-grid-3' : 'cardapio-grid-2'}>
-              {day.meals.map((m: any, mi: number) => {
-                const primeiroPratoId = m.dishes[0]?.id || '';
-                return (
-                  <div 
-                    key={mi} 
-                    className="col gap-8" 
-                    style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2)', border: '1px solid #f0f0f0', cursor: 'pointer' }}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Ver detalhes da refeição: ${m.label} de ${day.date}`}
-                    onClick={() => router.push(`/student/cardapio/${primeiroPratoId}`)}
-                    onKeyDown={(e) => handleCardKeyDown(e, primeiroPratoId)}
-                  >
-                    <div className="between">
-                      <span className="weight-600 text-sm">{m.label}</span>
-                      <span className="text-xs muted">{m.time}</span>
-                    </div>
-                    <div className="col gap-6">
-                      {m.dishes.slice(0, 4).map((d: any, di: number) => (
-                        <span key={di} className="text-sm">{d.name}</span>
-                      ))}
-                      {m.dishes.length > 4 && <span className="text-xs muted">+ {m.dishes.length - 4} pratos</span>}
-                    </div>
-                    <div className="row gap-6" style={{ flexWrap: 'wrap' }}>
-                      {[...new Set(m.dishes.flatMap((d: any) => d.tags ?? []))].slice(0, 4).map((t: any) => (
-                        <RestrictionChip key={t} k={t} />
-                      ))}
-                    </div>
+              {day.meals.map((m: any, mi: number) => (
+                <div 
+                  key={mi} 
+                  className="col gap-8" 
+                  style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2)', border: '1px solid #f0f0f0' }}
+                >
+                  <div className="between">
+                    <span className="weight-600 text-sm">{m.label}</span>
+                    <span className="text-xs muted">{m.time}</span>
                   </div>
-                );
-              })}
+                  <div className="col gap-6">
+                    {m.dishes.slice(0, 4).map((d: any, di: number) => (
+                      <button
+                        key={d.id ?? di}
+                        type="button"
+                        className="text-sm"
+                        style={{ all: 'unset', cursor: 'pointer', display: 'block', width: '100%', textAlign: 'left' }}
+                        onClick={() => setSelectedDishId(d.id)}
+                        onKeyDown={(e) => handleDishKeyDown(e, d.id)}
+                        aria-label={`Ver detalhes de ${d.name}`}
+                      >
+                        {d.name}
+                      </button>
+                    ))}
+                    {m.dishes.length > 4 && <span className="text-xs muted">+ {m.dishes.length - 4} pratos</span>}
+                  </div>
+                  <div className="row gap-6" style={{ flexWrap: 'wrap' }}>
+                    {[...new Set(m.dishes.flatMap((d: any) => d.tags ?? []))].slice(0, 4).map((t: any) => (
+                      <RestrictionChip key={t} k={t} />
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         ))}
       </div>
+
+      <Modal
+        open={!!selectedDishId}
+        onClose={() => setSelectedDishId(null)}
+        title={selectedDish?.name ?? 'Detalhes do prato'}
+        sub={selectedDish ? `Categoria ${selectedDish.cat}` : undefined}
+      >
+        {isDishLoading ? (
+          <div className="col gap-4">
+            <Skeleton h={28} w="70%" r={8} />
+            <Skeleton h={16} w="90%" r={6} />
+            <Skeleton h={16} w="80%" r={6} />
+          </div>
+        ) : selectedDish ? (
+          <DishDetails dish={selectedDish} />
+        ) : (
+          <div className="col gap-4">
+            <span className="muted">Não foi possível carregar os detalhes do prato.</span>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
