@@ -1,11 +1,32 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, CheckCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Check } from 'lucide-react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+
 import { Button } from '@/components/ui/Button';
-import { MealSection } from '@/components/student/MealSection';
+import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { useTodayMenu, useTodayConfirmation, useCancelConfirmation } from '@/hooks/useMenu';
+import { MealSection } from '@/components/student/MealSection';
+import { RestrictionChip } from '@/components/student/RestrictionChip';
+
+import { useTodayMenu, useTodayConfirmation, useCancelConfirmation, useConfirmMeal } from '@/hooks/useMenu';
+import { useProfile } from '@/hooks/useProfile';
+import { confirmationSchema, type ConfirmationForm } from '@/schemas/confirmationSchema';
+import { cn } from '@/utils/cn';
+
+const PERIODS = [
+  { k: 'cafe'   as const, l: 'Café'   },
+  { k: 'almoco' as const, l: 'Almoço' },
+  { k: 'jantar' as const, l: 'Jantar' },
+];
+
+const TYPES = [
+  { k: 'padrao'   as const, t: 'Refeição Padrão',   s: 'Cardápio regular do dia' },
+  { k: 'adaptada' as const, t: 'Refeição Adaptada', s: 'Baseada nas suas restrições alimentares' },
+];
 
 function HomeSkeleton() {
   return (
@@ -45,6 +66,40 @@ export default function StudentHomePage() {
   const { data: confirmation } = useTodayConfirmation();
   const { mutate: cancelConfirm } = useCancelConfirmation();
   const confirmed = !!confirmation;
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const { data: profile, isLoading: isProfileLoading } = useProfile();
+  const { mutate: confirmMeal, isPending } = useConfirmMeal();
+  const { control, handleSubmit, watch, reset } = useForm<ConfirmationForm>({
+    resolver: zodResolver(confirmationSchema),
+    defaultValues: { period: 'almoco', type: 'padrao' },
+  });
+  const period = watch('period');
+
+    const handleOpenModal = (isEdit: boolean) => {
+    reset({
+
+      period: isEdit && confirmation ? confirmation.period : 'almoco',
+
+      type: isEdit && confirmation ? confirmation.type : 'padrao'
+
+    });
+
+    setIsConfirmModalOpen(true); 
+
+  };
+  const onSubmit = (formData: ConfirmationForm) => {
+
+    confirmMeal(formData, { 
+
+      onSuccess: () => {
+
+        setIsConfirmModalOpen(false); 
+
+      } 
+
+    });
+
+  };
 
   if (isLoading) return <HomeSkeleton />;
 
@@ -108,13 +163,13 @@ export default function StudentHomePage() {
           <div className="row gap-12">
             {confirmed ? (
               <>
-                <Link href={`/student/confirmar?period=${confirmation?.period || 'almoco'}&type=${confirmation?.type || 'padrao'}`}><Button variant="secondary">Editar refeição</Button></Link>
+                <Button variant="secondary" onClick={() => handleOpenModal(true)}>Editar refeição</Button>
                 <Button variant="secondary" onClick={() => cancelConfirm()}>Cancelar</Button>
               </>
             ) : (
-              <Link href="/student/confirmar">
-                <Button variant="primary" size="lg" icon={CheckCircle}>Confirmar refeição</Button>
-              </Link>
+              <Button variant="primary" size="lg" icon={CheckCircle} onClick={() => handleOpenModal(false)}>
+                Confirmar refeição
+              </Button>
             )}
           </div>
         </div>
@@ -129,6 +184,73 @@ export default function StudentHomePage() {
           ))}
         </div>
       </div>
+
+      <Modal
+        open={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        title="Confirmar refeição"
+        sub="IFAL Arapiraca"
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="col gap-20" style={{ padding: '10px 0' }}>
+
+          <div className="col gap-12">
+            <span className="weight-600">Período</span>
+            <Controller name="period" control={control} render={({ field }) => (
+              <div className="row gap-8">
+                {PERIODS.map(p => (
+                  <button key={p.k} type="button" onClick={() => field.onChange(p.k)} className={cn('btn', field.value === p.k ? 'btn--primary' : 'btn--secondary')}>
+                    {p.l}
+                  </button>
+                ))}
+              </div>
+            )}
+            />
+          </div>
+
+          <div className="col gap-12">
+            <span className="weight-600">Tipo de refeição</span>
+            <Controller name="type" control={control} render={({ field }) => (
+              <div className="col gap-8">
+                {TYPES.map(o => (
+                  <div key={o.k} onClick={() => field.onChange(o.k)} style={{ padding: 16, borderRadius: 12, cursor: 'pointer', display: 'flex', gap: 12, alignItems: 'center', border: `2px solid ${field.value === o.k ? 'var(--brand)' : 'var(--border)'}`, background: field.value === o.k ? 'var(--brand-soft)' : 'var(--surface)' }}>
+                    <span className="center" style={{ width: 22, height: 22, borderRadius: 999, border: `2px solid ${field.value === o.k ? 'var(--brand)' : 'var(--border)'}`, background: field.value === o.k ? 'var(--brand)' : 'var(--surface)' }}>
+                      {field.value === o.k && <Check size={12} strokeWidth={3} style={{ color: 'white' }} />}
+                    </span>
+                    <div className="col">
+                      <span className="weight-600">{o.t}</span>
+                      <span className="text-xs muted">{o.s}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            />
+          </div>
+
+          <div className="card card--padded col gap-8" style={{ background: 'var(--surface-2)', border: '1px dashed var(--border)' }}>
+            <span className="weight-600 text-sm">Suas restrições aplicadas</span>
+            <div className="row gap-6" style={{ flexWrap: 'wrap' }}>
+              {isProfileLoading ? (
+                <Skeleton h={24} w={100} r={12} />
+              ) : profile?.restrictions && profile.restrictions.length > 0 ? (
+                profile.restrictions.map((res: string) => (
+                  <RestrictionChip key={res} k={res as any} />
+                ))
+              ) : (
+                <span className="text-xs muted">Nenhuma restrição cadastrada.</span>
+              )}
+            </div>
+            <Link href="/student/perfil" onClick={() => setIsConfirmModalOpen(false)}>
+              <span className="text-xs" style={{ color: 'var(--brand-text)', cursor: 'pointer' }}>Editar restrições no perfil →</span>
+            </Link>
+          </div>
+
+          <Button type="submit" variant="primary" size="lg" block disabled={isPending}>
+            {isPending ? 'Confirmando…' : `Confirmar presença · ${PERIODS.find(p => p.k === period)?.l}`}
+          </Button>
+
+        </form>
+      </Modal>
     </div>
   );
 }
