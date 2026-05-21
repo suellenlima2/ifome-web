@@ -3,7 +3,7 @@ import { Utensils } from 'lucide-react';
 import { Tag } from '@/components/ui/Tag';
 import { RestrictionChip } from './RestrictionChip';
 import { getDishCategoryLabel } from '@/utils/formatDate';
-import { Dialog } from '@/components/ui/Dialog';
+import { Modal } from '@/components/ui/Modal';
 import { DishDetails } from './DishDetails';
 import type { Dish } from '@/types';
 
@@ -45,13 +45,14 @@ export function DishCard({ dish }: { dish: Dish }) {
         </div>
       </div>
 
-      <Dialog 
-        isOpen={isOpen} 
+      <Modal 
+        open={isOpen} 
         onClose={() => setIsOpen(false)} 
         title={dish.name}
+        sub={`Categoria ${getDishCategoryLabel(dish.cat)}`}
       >
         <DishDetails dish={dish} />
-      </Dialog>
+      </Modal>
     </>
   );
 }
