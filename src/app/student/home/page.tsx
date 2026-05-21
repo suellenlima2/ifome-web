@@ -30,12 +30,32 @@ const TYPES = [
 
 function HomeSkeleton() {
   return (
-    <div className="col gap-24" style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <div className="col gap-4"><Skeleton w={120} h={12} /><Skeleton w={280} h={32} r={8} /></div>
+    <div className="col gap-24" style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
+      {/* 1. A Data de Hoje */}
+      <div className="col gap-4">
+        <Skeleton w={280} h={36} r={8} />
+      </div>
+      
+      {/* 2. Aviso da Coordenação */}
       <Skeleton h={80} r={14} />
+      
+      {/* 3. Bloco de Confirmação */}
       <Skeleton h={100} r={14} />
-      <div className="grid-3">
-        {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} h={200} r={14} />)}
+      
+      {/* 4. Cardápio do Dia */}
+      <div className="col gap-16">
+        <Skeleton w={180} h={24} r={6} />
+        <div className="col gap-24">
+          <div className="col gap-12">
+            <div className="between">
+              <Skeleton w={140} h={20} r={6} />
+              <Skeleton w={100} h={14} r={4} />
+            </div>
+            <div className="grid-3">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} h={200} r={14} />)}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -101,11 +121,12 @@ export default function StudentHomePage() {
 
   return (
     <div className="col gap-24" style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
+      {/* 1. A Data de Hoje */}
       <div className="col gap-4">
-        <span className="text-sm muted">{data!.date}</span>
-        <span className="h-page">Cardápio de hoje</span>
+        <span className="h-page">{data!.date}</span>
       </div>
 
+      {/* 2. Aviso da Coordenação */}
       <div className="banner">
         <span className="banner__icon" style={{ background: 'var(--brand-soft)', color: 'var(--brand-text)', borderRadius: 8 }}>
           <AlertCircle size={16} />
@@ -116,6 +137,7 @@ export default function StudentHomePage() {
         </div>
       </div>
 
+      {/* 3. Bloco de Confirmação */}
       <div className="card" style={{
         padding: 24,
         background: confirmed
@@ -153,48 +175,55 @@ export default function StudentHomePage() {
         </div>
       </div>
 
-      {data!.meals.map(meal => (
-        <MealSection key={meal.key} meal={meal} />
-      ))}
-            <Modal 
-        open={isConfirmModalOpen} 
-        onClose={() => setIsConfirmModalOpen(false)} 
+      {/* 4. Cardápio do Dia */}
+      <div className="col gap-16">
+        <span className="h-section" style={{ fontSize: 20 }}>Cardápio de hoje</span>
+        <div className="col gap-24">
+          {data!.meals.map(meal => (
+            <MealSection key={meal.key} meal={meal} />
+          ))}
+        </div>
+      </div>
+
+      <Modal
+        open={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
         title="Confirmar refeição"
         sub="IFAL Arapiraca"
       >
         <form onSubmit={handleSubmit(onSubmit)} className="col gap-20" style={{ padding: '10px 0' }}>
-          
+
           <div className="col gap-12">
             <span className="weight-600">Período</span>
             <Controller name="period" control={control} render={({ field }) => (
-                <div className="row gap-8">
-                  {PERIODS.map(p => (
-                    <button key={p.k} type="button" onClick={() => field.onChange(p.k)} className={cn('btn', field.value === p.k ? 'btn--primary' : 'btn--secondary')}>
-                      {p.l}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <div className="row gap-8">
+                {PERIODS.map(p => (
+                  <button key={p.k} type="button" onClick={() => field.onChange(p.k)} className={cn('btn', field.value === p.k ? 'btn--primary' : 'btn--secondary')}>
+                    {p.l}
+                  </button>
+                ))}
+              </div>
+            )}
             />
           </div>
 
           <div className="col gap-12">
             <span className="weight-600">Tipo de refeição</span>
             <Controller name="type" control={control} render={({ field }) => (
-                <div className="col gap-8">
-                  {TYPES.map(o => (
-                    <div key={o.k} onClick={() => field.onChange(o.k)} style={{ padding: 16, borderRadius: 12, cursor: 'pointer', display: 'flex', gap: 12, alignItems: 'center', border: `2px solid ${field.value === o.k ? 'var(--brand)' : 'var(--border)'}`, background: field.value === o.k ? 'var(--brand-soft)' : 'var(--surface)' }}>
-                      <span className="center" style={{ width: 22, height: 22, borderRadius: 999, border: `2px solid ${field.value === o.k ? 'var(--brand)' : 'var(--border)'}`, background: field.value === o.k ? 'var(--brand)' : 'var(--surface)' }}>
-                        {field.value === o.k && <Check size={12} strokeWidth={3} style={{ color: 'white' }} />}
-                      </span>
-                      <div className="col">
-                        <span className="weight-600">{o.t}</span>
-                        <span className="text-xs muted">{o.s}</span>
-                      </div>
+              <div className="col gap-8">
+                {TYPES.map(o => (
+                  <div key={o.k} onClick={() => field.onChange(o.k)} style={{ padding: 16, borderRadius: 12, cursor: 'pointer', display: 'flex', gap: 12, alignItems: 'center', border: `2px solid ${field.value === o.k ? 'var(--brand)' : 'var(--border)'}`, background: field.value === o.k ? 'var(--brand-soft)' : 'var(--surface)' }}>
+                    <span className="center" style={{ width: 22, height: 22, borderRadius: 999, border: `2px solid ${field.value === o.k ? 'var(--brand)' : 'var(--border)'}`, background: field.value === o.k ? 'var(--brand)' : 'var(--surface)' }}>
+                      {field.value === o.k && <Check size={12} strokeWidth={3} style={{ color: 'white' }} />}
+                    </span>
+                    <div className="col">
+                      <span className="weight-600">{o.t}</span>
+                      <span className="text-xs muted">{o.s}</span>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ))}
+              </div>
+            )}
             />
           </div>
 

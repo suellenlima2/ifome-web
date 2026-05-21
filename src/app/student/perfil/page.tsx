@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, Check, LogOut, History, Pencil } from 'lucide-react';
+import { Check, LogOut, History, Pencil } from 'lucide-react';
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
@@ -13,6 +13,7 @@ import { Toggle } from '@/components/ui/Toggle';
 import { Empty } from '@/components/ui/Empty';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { MealHistoryItem } from '@/components/student/MealHistoryItem';
+import { Modal } from '@/components/ui/Modal';
 import { RESTRICTIONS } from '@/components/student/RestrictionChip';
 import { profileSchema, type ProfileForm } from '@/schemas/profileSchema';
 import { useProfile, useUpdateProfile, useMealHistory } from '@/hooks/useProfile';
@@ -27,11 +28,12 @@ export default function PerfilPage() {
   const { mutate: updateProfile, isPending } = useUpdateProfile();
   
   const [restrictions, setRestrictions] = useState<RestrictionKey[]>([]);
-  const [showAllHistory, setShowAllHistory] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile?.restrictions) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRestrictions(profile.restrictions);
     }
   }, [profile]);
@@ -47,8 +49,8 @@ export default function PerfilPage() {
   });
 
   const displayHistory = useMemo(
-    () => (showAllHistory ? history : history?.slice(0, 4)) ?? [],
-    [history, showAllHistory],
+    () => history?.slice(0, 4) ?? [],
+    [history],
   );
 
   const toggleRestriction = (k: RestrictionKey) => {
@@ -80,15 +82,38 @@ export default function PerfilPage() {
         style={{ display: 'none' }}
         onChange={() => toast.success('Foto atualizada com sucesso!')}
       />
+
+      <Modal
+        open={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        title="Histórico completo"
+        sub="Todas as suas refeições confirmadas"
+        footer={
+          <Button 
+            type="button" 
+            variant="ghost" 
+            size="sm" 
+            block 
+            icon={History} 
+            onClick={() => setIsHistoryOpen(false)}
+          >
+            Ver menos
+          </Button>
+        }
+      >
+        <div className="col gap-8 scroll-y" style={{ maxHeight: 340, paddingRight: 4 }}>
+          {history && history.length > 0 ? (
+            history.map((h, i) => <MealHistoryItem key={i} item={h} />)
+          ) : (
+            <Empty icon={History} title="Nenhuma refeição ainda" body="Suas confirmações aparecerão aqui." />
+          )}
+        </div>
+      </Modal>
       
       <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
         <div className="col gap-20" style={{ maxWidth: 920, margin: '0 auto', width: '100%', padding: '0 16px' }}>
           
-          <div className="row gap-12">
-            <Link href="/student/home">
-              <Button type="button" variant="ghost" size="sm" icon={ArrowLeft}>Início</Button>
-            </Link>
-          </div>
+
 
           <div className="card" style={{ overflow: 'hidden' }}>
             <div style={{ height: 100, background: 'linear-gradient(135deg, var(--green-700) 0%, var(--green-500) 100%)' }} />
@@ -186,9 +211,11 @@ export default function PerfilPage() {
                     {displayHistory.map((h, i) => <MealHistoryItem key={i} item={h} />)}
                   </div>
                 )}
-                <Button type="button" variant="ghost" size="sm" block icon={History} onClick={() => setShowAllHistory(v => !v)}>
-                  {showAllHistory ? 'Ver menos' : 'Ver histórico completo'}
-                </Button>
+                {history && history.length > 4 && (
+                  <Button type="button" variant="ghost" size="sm" block icon={History} onClick={() => setIsHistoryOpen(true)}>
+                    Ver histórico completo
+                  </Button>
+                )}
               </div>
             </div>
           </div>
