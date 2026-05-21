@@ -610,6 +610,31 @@ table.tbl tbody tr:last-child td { border-bottom: 0; }
 .cardapio-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .cardapio-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 
+/* Clickable dish card inside the weekly menu */
+.dish-card {
+  all: unset;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+  transition: background .12s ease, border-color .12s ease, transform .12s ease, box-shadow .12s ease;
+}
+.dish-card:hover {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  transform: translateY(-1px);
+  box-shadow: var(--sh-1);
+}
+.dish-card:active { transform: translateY(0); }
+.dish-card:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
 /* Login page layout */
 .login-shell { display: flex; height: 100vh; width: 100%; }
 .login-brand {

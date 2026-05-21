@@ -120,8 +120,7 @@ export default function StudentCardapioPage() {
                       <button
                         key={d.id ?? di}
                         type="button"
-                        className="text-sm"
-                        style={{ all: 'unset', cursor: 'pointer', display: 'block', width: '100%', textAlign: 'left' }}
+                        className="dish-card"
                         onClick={() => setSelectedDishId(d.id)}
                         onKeyDown={(e) => handleDishKeyDown(e, d.id)}
                         aria-label={`Ver detalhes de ${d.name}`}
