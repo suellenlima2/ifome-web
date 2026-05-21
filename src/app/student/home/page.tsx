@@ -86,7 +86,7 @@ export default function StudentHomePage() {
           <div className="row gap-12">
             {confirmed ? (
               <>
-                <Link href="/student/confirmar"><Button variant="secondary">Editar refeição</Button></Link>
+                <Link href={`/student/confirmar?period=${confirmation?.period || 'almoco'}&type=${confirmation?.type || 'padrao'}`}><Button variant="secondary">Editar refeição</Button></Link>
                 <Button variant="secondary" onClick={() => cancelConfirm()}>Cancelar</Button>
               </>
             ) : (
