@@ -28,7 +28,11 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
 
   if (!dish) return (
     <div style={{ maxWidth: 880, margin: '0 auto' }}>
-      <Link href="/student/cardapio"><Button variant="ghost" size="sm" icon={ArrowLeft}>Voltar ao cardápio</Button></Link>
+      <Link href="/student/cardapio">
+        <Button variant="ghost" size="sm" icon={ArrowLeft} aria-label="Voltar à página de cardápios">
+          Voltar ao cardápio
+        </Button>
+      </Link>
       <div className="card center" style={{ marginTop: 16, padding: 56 }}>
         <span className="muted">Prato não encontrado.</span>
       </div>
@@ -37,25 +41,34 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div style={{ maxWidth: 880, margin: '0 auto', width: '100%' }}>
-      <Link href="/student/cardapio"><Button variant="ghost" size="sm" icon={ArrowLeft}>Voltar ao cardápio</Button></Link>
+      <Link href="/student/cardapio">
+        <Button variant="ghost" size="sm" icon={ArrowLeft} aria-label="Voltar à página de cardápios">
+          Voltar ao cardápio
+        </Button>
+      </Link>
 
-      <div className="card" style={{ marginTop: 16, overflow: 'hidden' }}>
+      <div 
+        className="card" 
+        style={{ marginTop: 16, overflow: 'hidden' }}
+        role="main"
+        aria-labelledby="dish-title-id"
+      >
         <div style={{
           height: 240,
           background: 'linear-gradient(135deg, var(--brand-soft) 0%, color-mix(in oklab, var(--brand) 22%, var(--surface)) 100%)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-text)',
         }}>
-          <Utensils size={64} />
+          <Utensils size={64} aria-hidden="true" />
         </div>
 
         <div className="col gap-16" style={{ padding: 28 }}>
           <div className="row gap-8" style={{ flexWrap: 'wrap' }}>
             <Tag tone="gray">Almoço · 11:00 – 14:00</Tag>
-            {dish.tags.map(t => <RestrictionChip key={t} k={t} />)}
+            {dish.tags.map((t: any) => <RestrictionChip key={t} k={t} />)}
           </div>
 
           <div className="col gap-4">
-            <span className="h-page">{dish.name}</span>
+            <h1 id="dish-title-id" className="h-page" style={{ margin: 0 }}>{dish.name}</h1>
             <span className="muted">{dish.desc}</span>
           </div>
 
