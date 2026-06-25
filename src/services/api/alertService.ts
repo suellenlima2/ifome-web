@@ -1,14 +1,34 @@
-import type { Alert, DemandDay } from '@/types';
-import { mockAlerts, mockDemand7d } from '../mocks/alertMocks';
+import { apiRequest } from './client';
 
-function delay<T>(data: T, ms = 600): Promise<T> {
-  return new Promise(resolve => setTimeout(() => resolve(data), ms));
+export interface Alert {
+  id: string;
+  title: string;
+  description: string;
+  resolved: boolean;
+  createdAt: string;
+  severity?: 'low' | 'medium' | 'high';
+}
+
+export interface DemandDay {
+  date: string;
+  quantity: number;
 }
 
 export async function getAlerts(): Promise<Alert[]> {
-  return delay([...mockAlerts]);
+  return apiRequest<Alert[]>('/api/alerts');
 }
 
 export async function getDemand7d(): Promise<DemandDay[]> {
-  return delay([...mockDemand7d], 400);
+  return apiRequest<DemandDay[]>('/api/alerts/demand-7days');
+}
+
+export async function getUnresolvedCount(): Promise<{ count: number }> {
+  return apiRequest<{ count: number }>('/api/alerts/unresolved-count');
+}
+
+export async function toggleAlertStatus(id: string, resolved: boolean): Promise<Alert> {
+  return apiRequest<Alert>(`/api/alerts/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ resolved }),
+  });
 }

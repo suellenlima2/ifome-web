@@ -1,24 +1,39 @@
-import type { StockItem } from '@/types';
-import { mockStock } from '../mocks/stockMocks';
+import { apiRequest } from './client';
 
-function delay<T>(data: T, ms = 700): Promise<T> {
-  return new Promise(resolve => setTimeout(() => resolve(data), ms));
+export interface StockItem {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  minLimit?: number;
+  maxLimit?: number;
+  status?: string;
 }
-
-let stockData = [...mockStock];
 
 export async function getStock(): Promise<StockItem[]> {
-  return delay([...stockData]);
-}
-
-export async function updateStockItem(id: string, updates: Partial<StockItem>): Promise<StockItem> {
-  stockData = stockData.map(s => s.id === id ? { ...s, ...updates } : s);
-  const updated = stockData.find(s => s.id === id)!;
-  return delay(updated, 500);
+  return apiRequest<StockItem[]>('/api/stock');
 }
 
 export async function createStockItem(item: Omit<StockItem, 'id'>): Promise<StockItem> {
-  const newItem: StockItem = { ...item, id: `s${Date.now()}` };
-  stockData.push(newItem);
-  return delay(newItem, 500);
+  return apiRequest<StockItem>('/api/stock', {
+    method: 'POST',
+    body: JSON.stringify(item),
+  });
+}
+
+export async function updateStockItem(id: string, updates: Partial<StockItem>): Promise<StockItem> {
+  return apiRequest<StockItem>(`/api/stock/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function deleteStockItem(id: string): Promise<void> {
+  return apiRequest<void>(`/api/stock/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function getStockItemDetails(id: string): Promise<StockItem> {
+  return apiRequest<StockItem>(`/api/stock/${id}`);
 }

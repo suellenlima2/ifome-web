@@ -9,8 +9,9 @@ interface DishDetailsProps {
 }
 
 export function DishDetails({ dish }: DishDetailsProps) {
-  const uniqueTags = Array.from(new Set(dish.tags));
-  const ingredientText = dish.desc || 'Informações de ingredientes não disponíveis.';
+  // Sincronizado com a propriedade .restrictions do Swagger
+  const uniqueRestrictions = Array.from(new Set(dish.restrictions ?? []));
+  const ingredientText = dish.description || 'Informações de ingredientes não disponíveis.';
 
   return (
     <div className="space-y-6" style={{ textAlign: 'left' }}>
@@ -20,9 +21,9 @@ export function DishDetails({ dish }: DishDetailsProps) {
         </div>
         <div className="col gap-4">
           <div className="text-xs font-semibold uppercase tracking-wider muted">Categoria</div>
-          <div className="weight-700">{dish.cat}</div>
+          <div className="weight-700" style={{ textTransform: 'capitalize' }}>{dish.category}</div>
           <div className="row gap-4" style={{ flexWrap: 'wrap' }}>
-            {uniqueTags.map(tagKey => (
+            {uniqueRestrictions.map(tagKey => (
               <RestrictionChip key={tagKey} k={tagKey} />
             ))}
           </div>
@@ -49,11 +50,11 @@ export function DishDetails({ dish }: DishDetailsProps) {
         <span className="text-sm muted">{ingredientText}</span>
       </div>
 
-      {uniqueTags.length > 0 && (
+      {uniqueRestrictions.length > 0 && (
         <div className="col gap-3">
           <span className="weight-600">Restrições e avisos</span>
           <div className="row gap-6" style={{ flexWrap: 'wrap' }}>
-            {uniqueTags.map((tagKey) => (
+            {uniqueRestrictions.map((tagKey) => (
               <Tag key={tagKey} tone="yellow">{tagKey}</Tag>
             ))}
           </div>

@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Calendar, Filter, Download } from 'lucide-react';
-import { useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/Button';
 import { Donut } from '@/components/ui/Donut';
@@ -14,16 +13,21 @@ import { Tag } from '@/components/ui/Tag';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useSearchParams } from 'next/navigation';
 import { cn } from '@/utils/cn';
-import type { RecentConfirmation } from '@/types';
 
-function exportCSV(rows: RecentConfirmation[]) {
+const MEAL_LABELS: Record<string, string> = {
+  breakfast: 'Café da Manhã',
+  lunch: 'Almoço',
+  dinner: 'Jantar'
+};
+
+function exportCSV(rows: any[]) {
   const header = 'Aluno,Matrícula,Refeição,Tipo,Hora';
-  const lines = rows.map(r => `${r.name},${r.mat},${r.meal},${r.type},${r.at}`);
-  const blob = new Blob([[header, ...lines].join('\n')], { type: 'text/csv' });
+  const lines = rows.map(r => `${r.studentName},${r.studentId},${MEAL_LABELS[r.period] || r.period},${r.type},${r.confirmedAt}`);
+  const blob = new Blob([[header, ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'confirmacoes.csv';
+  a.download = 'confirmacoes_reais.csv';
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -31,29 +35,34 @@ function exportCSV(rows: RecentConfirmation[]) {
 function ConfirmationsContent() {
   const { data, isLoading } = useDashboard();
   const searchParams = useSearchParams();
-  const [typeFilter, setTypeFilter] = useState<'all' | 'Padrão' | 'Adaptada'>('all');
+  
+  const [typeFilter, setTypeFilter] = useState<'all' | 'standard' | 'adapted'>('all');
   const [mealFilter, setMealFilter] = useState<string>(searchParams.get('meal') || 'all');
   const [search, setSearch] = useState('');
 
   const { meals, total, capacity, confirmations } = useMemo(() => {
     if (!data) return { meals: [], total: 0, capacity: 0, confirmations: [] };
-    const meals = data.menuToday.meals;
-    const total = meals.reduce((s, m) => s + m.confirmados, 0);
-    const capacity = meals.reduce((s, m) => s + m.capacidade, 0);
-    const confirmations = [...data.recentConfirmations, ...data.recentConfirmations.slice(0, 3).map(r => ({ ...r, id: r.id + 'x' }))];
+    
+    const activeDay = data.menuToday.day;
+    const meals = activeDay?.meals ?? [];
+    const total = meals.reduce((acc, m) => acc + m.confirmedCount, 0);
+    const capacity = meals.reduce((acc, m) => acc + m.capacity, 0);
+    const confirmations = data.recentConfirmations ?? [];
+    
     return { meals, total, capacity, confirmations };
   }, [data]);
 
   const q = search.toLowerCase();
+  
   const filtered = confirmations
-    .filter(r => typeFilter === 'all' || r.type === typeFilter)
-    .filter(r => mealFilter === 'all' || r.meal === mealFilter)
-    .filter(r => !q || r.name.toLowerCase().includes(q) || r.mat.toLowerCase().includes(q));
+    .filter((r: any) => typeFilter === 'all' || r.type === typeFilter)
+    .filter((r: any) => mealFilter === 'all' || r.period === mealFilter)
+    .filter((r: any) => !q || r.studentName.toLowerCase().includes(q) || r.studentId.toLowerCase().includes(q));
 
   if (isLoading) return (
     <>
       <AdminTopbar title="Confirmações" />
-      <div className="main__scroll col gap-20">
+      <div className="main__scroll col gap-20" style={{ padding: 24 }}>
         <div className="grid-3">
           {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} h={160} r={14} />)}
         </div>
@@ -64,41 +73,53 @@ function ConfirmationsContent() {
 
   return (
     <>
-      <AdminTopbar title="Confirmações" sub="Hoje · 09/05" onSearch={setSearch} />
+      <AdminTopbar title="Confirmações" sub={`Hoje · ${data?.menuToday?.day?.date ?? ''}`} onSearch={setSearch} />
       <div className="main__scroll">
         <div className="col gap-20">
           <div className="row gap-8" style={{ flexWrap: 'wrap' }}>
-            <Button variant="secondary" size="sm" icon={Calendar} onClick={() => toast.info('Filtro por data aplicado.')}>Hoje · 09/05</Button>
-            <Button variant="secondary" size="sm" icon={Filter} onClick={() => toast.info('Filtro aplicado.')}>Tipo: {typeFilter === 'all' ? 'Todos' : typeFilter}</Button>
+            <Button variant="secondary" size="sm" icon={Calendar} onClick={() => toast.info('Filtrado pelo dia vigente.')}>
+              Hoje · {data?.menuToday?.day?.date}
+            </Button>
+            <Button variant="secondary" size="sm" icon={Filter}>
+              Tipo: {typeFilter === 'all' ? 'Todos' : typeFilter === 'standard' ? 'Padrão' : 'Adaptada'}
+            </Button>
             {mealFilter !== 'all' && (
-              <Button variant="primary" size="sm" onClick={() => setMealFilter('all')}>Refeição: {mealFilter} ✕</Button>
+              <Button variant="primary" size="sm" onClick={() => setMealFilter('all')}>
+                Refeição: {MEAL_LABELS[mealFilter] || mealFilter} ✕
+              </Button>
             )}
             <span className="spacer" />
             <Button variant="secondary" size="sm" icon={Download} onClick={() => exportCSV(filtered)}>Exportar CSV</Button>
           </div>
 
           <div className="grid-3">
-            {meals.map(m => (
-              <div 
-                key={m.key} 
-                className={cn("card card--padded col gap-12", mealFilter === m.label && "card--active")}
-                onClick={() => setMealFilter(f => f === m.label ? 'all' : m.label)}
-                style={{ cursor: 'pointer' }}
-              >
-                <div className="between">
-                  <span className="weight-700">{m.label}</span>
-                  <span className="text-xs muted">{m.time}</span>
-                </div>
-                <div className="row gap-12" style={{ alignItems: 'center' }}>
-                  <Donut value={m.confirmados} max={m.capacidade} size={92} />
-                  <div className="col">
-                    <span className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{m.confirmados}</span>
-                    <span className="text-xs muted">de {m.capacidade}</span>
+            {meals.map(m => {
+              const label = MEAL_LABELS[m.period] || m.period;
+              const timeFormatted = `${m.startTime} - ${m.endTime}`;
+              const isSelected = mealFilter === m.period;
+
+              return (
+                <div 
+                  key={m.id} 
+                  className={cn("card card--padded col gap-12", isSelected && "card--active")}
+                  onClick={() => setMealFilter(f => f === m.period ? 'all' : m.period)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="between">
+                    <span className="weight-700">{label}</span>
+                    <span className="text-xs muted">{timeFormatted}</span>
                   </div>
+                  <div className="row gap-12" style={{ alignItems: 'center' }}>
+                    <Donut value={m.confirmedCount} max={m.capacity} size={92} />
+                    <div className="col">
+                      <span className="mono" style={{ fontSize: 24, fontWeight: 700 }}>{m.confirmedCount}</span>
+                      <span className="text-xs muted">de {m.capacity}</span>
+                    </div>
+                  </div>
+                  <Bar value={m.confirmedCount} max={m.capacity} tone={m.confirmedCount / m.capacity > .85 ? 'low' : 'ok'} />
                 </div>
-                <Bar value={m.confirmados} max={m.capacidade} tone={m.confirmados / m.capacidade > .85 ? 'low' : 'ok'} />
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="card">
@@ -106,39 +127,60 @@ function ConfirmationsContent() {
               <span className="h-section">Lista de confirmações · {filtered.length} de {capacity}</span>
               <div className="row gap-8">
                 <Button
-                  variant={typeFilter === 'Padrão' ? 'primary' : 'ghost'}
+                  variant={typeFilter === 'standard' ? 'primary' : 'ghost'}
                   size="sm"
-                  onClick={() => setTypeFilter(f => f === 'Padrão' ? 'all' : 'Padrão')}
+                  onClick={() => setTypeFilter(f => f === 'standard' ? 'all' : 'standard')}
                 >
-                  Padrão ({confirmations.filter(r => r.type === 'Padrão').length})
+                  Padrão ({confirmations.filter((r: any) => r.type === 'standard').length})
                 </Button>
                 <Button
-                  variant={typeFilter === 'Adaptada' ? 'primary' : 'ghost'}
+                  variant={typeFilter === 'adapted' ? 'primary' : 'ghost'}
                   size="sm"
-                  onClick={() => setTypeFilter(f => f === 'Adaptada' ? 'all' : 'Adaptada')}
+                  onClick={() => setTypeFilter(f => f === 'adapted' ? 'all' : 'adapted')}
                 >
-                  Adaptada ({confirmations.filter(r => r.type === 'Adaptada').length})
+                  Adaptada ({confirmations.filter((r: any) => r.type === 'adapted').length})
                 </Button>
               </div>
             </div>
             <div className="tbl-wrap">
-            <table className="tbl">
-              <thead>
-                <tr><th>Aluno</th><th>Matrícula</th><th>Curso</th><th>Refeição</th><th>Tipo</th><th>Hora</th></tr>
-              </thead>
-              <tbody>
-                {filtered.map(r => (
-                  <tr key={r.id}>
-                    <td><div className="row gap-12"><Avatar name={r.name} size="sm" /><span className="weight-600">{r.name}</span></div></td>
-                    <td className="mono muted">{r.mat}</td>
-                    <td className="muted">Eng. de Computação</td>
-                    <td>{r.meal}</td>
-                    <td><Tag tone={r.type === 'Adaptada' ? 'purple' : 'gray'}>{r.type}</Tag></td>
-                    <td className="mono muted">{r.at}</td>
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th>Aluno</th>
+                    <th>Matrícula</th>
+                    <th>Refeição</th>
+                    <th>Tipo</th>
+                    <th>Hora da Confirmação</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filtered.map((r: any) => (
+                    <tr key={r.id}>
+                      <td>
+                        <div className="row gap-12">
+                          <Avatar name={r.studentName} size="sm" />
+                          <span className="weight-600">{r.studentName}</span>
+                        </div>
+                      </td>
+                      <td className="mono muted">{r.studentId}</td>
+                      <td>{MEAL_LABELS[r.period] || r.period}</td>
+                      <td>
+                        <Tag tone={r.type === 'adapted' ? 'purple' : 'gray'}>
+                          {r.type === 'adapted' ? 'Adaptada' : 'Padrão'}
+                        </Tag>
+                      </td>
+                      <td className="mono muted">{r.confirmedAt}</td>
+                    </tr>
+                  ))}
+                  {filtered.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="muted text-center" style={{ padding: 24 }}>
+                        Nenhuma confirmação encontrada para os filtros aplicados.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -151,7 +193,7 @@ import { Suspense } from 'react';
 
 export default function AdminConfirmacoesPage() {
   return (
-    <Suspense fallback={<div className="center" style={{ height: '100%' }}>Carregando...</div>}>
+    <Suspense fallback={<div className="center" style={{ height: '100vh' }}>Carregando listagem...</div>}>
       <ConfirmationsContent />
     </Suspense>
   );

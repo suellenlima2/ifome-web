@@ -24,10 +24,11 @@ export function useStock(filter: StockStatus | 'all' = 'all') {
 export function useUpdateStock() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<StockItem> }) =>
+    mutationFn: ({ id, updates }: { id: string; updates: any }) =>
       saveStockItem(id, updates),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['stock'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] }); 
       toast.success('Estoque atualizado com sucesso!');
     },
     onError: () => {
@@ -39,9 +40,10 @@ export function useUpdateStock() {
 export function useAddStock() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (item: Omit<StockItem, 'id'>) => addStockItem(item),
+    mutationFn: (item: any) => addStockItem(item),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['stock'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
       toast.success('Produto adicionado com sucesso!');
     },
     onError: () => {

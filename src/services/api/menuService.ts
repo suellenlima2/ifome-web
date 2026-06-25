@@ -1,4 +1,4 @@
-import type { MenuToday, WeekDay, Dish, ConfirmationPayload } from '@/types';
+import type { MenuToday, WeekDay, Dish, ConfirmationPayload, MealConfirmation, RecentConfirmationsResponse } from '@/types';
 import { apiRequest } from './client';
 
 export async function getMenuToday(): Promise<MenuToday> {
@@ -25,25 +25,23 @@ export async function confirmMeal(payload: ConfirmationPayload): Promise<void> {
   });
 }
 
-export async function getConfirmedMeal(): Promise<ConfirmationPayload | null> {
+export async function getConfirmedMeal(): Promise<MealConfirmation | null> {
   try {
-    return await apiRequest<ConfirmationPayload | null>('/api/confirmations/today');
-  } catch (error) {
-    console.error("Erro ao buscar confirmação de hoje:", error);
-    return null;
+    return await apiRequest<MealConfirmation>('/api/confirmations/today');
+  } catch (error: any) {
+    if (error.message?.includes('403') || error.message?.includes('404')) {
+      return null;
+    }
+    throw error;
   }
 }
 
 export async function cancelMeal(): Promise<void> {
-  return apiRequest<void>('/api/confirmations/today', { method: 'DELETE' });
+  return apiRequest<void>('/api/confirmations/today', { 
+    method: 'DELETE' 
+  });
 }
 
-/* ==========================================================================
-   DICA PARA A ÁREA DO ADMIN:
-   Se você precisar listar as confirmações recentes para a tela de dashboard do admin,
-   você pode criar uma função usando a última rota da imagem:
-   
-   export async function getRecentConfirmationsAdmin(): Promise<any> {
-     return apiRequest('/api/confirmations/recent');
-   }
-   ========================================================================== */
+export async function getRecentConfirmationsAdmin(page = 1, pageSize = 10): Promise<RecentConfirmationsResponse> {
+  return apiRequest<RecentConfirmationsResponse>(`/api/confirmations/recent?page=${page}&pageSize=${pageSize}`);
+}

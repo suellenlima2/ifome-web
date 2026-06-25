@@ -64,12 +64,14 @@ export default function DishDetailPage({ params }: { params: Promise<{ id: strin
         <div className="col gap-16" style={{ padding: 28 }}>
           <div className="row gap-8" style={{ flexWrap: 'wrap' }}>
             <Tag tone="gray">Almoço · 11:00 – 14:00</Tag>
-            {dish.tags.map((t: any) => <RestrictionChip key={t} k={t} />)}
+            {dish.restrictions?.map((res) => (
+              <RestrictionChip key={res} k={res} />
+            ))}
           </div>
 
           <div className="col gap-4">
             <h1 id="dish-title-id" className="h-page" style={{ margin: 0 }}>{dish.name}</h1>
-            <span className="muted">{dish.desc}</span>
+            <span className="muted">{dish.description}</span>
           </div>
 
           <div className="grid-3">

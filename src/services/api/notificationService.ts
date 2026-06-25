@@ -1,22 +1,26 @@
-import type { Notification } from '@/types';
-import { mockNotifications } from '../mocks/notificationMocks';
+import { apiRequest } from './client';
 
-function delay<T>(data: T, ms = 600): Promise<T> {
-  return new Promise(resolve => setTimeout(() => resolve(data), ms));
+export interface Notification {
+  id: string;
+  title: string;
+  body: string;
+  unread: boolean;
+  createdAt: string;
+  type?: string;
 }
 
-let notifications = [...mockNotifications];
-
 export async function getNotifications(): Promise<Notification[]> {
-  return delay([...notifications]);
+  return apiRequest<Notification[]>('/api/notifications');
 }
 
 export async function markAllRead(): Promise<void> {
-  notifications = notifications.map(n => ({ ...n, unread: false }));
-  return delay(undefined as unknown as void, 300);
+  return apiRequest<void>('/api/notifications', { 
+    method: 'PATCH' 
+  });
 }
 
 export async function markOneRead(id: string): Promise<void> {
-  notifications = notifications.map(n => n.id === id ? { ...n, unread: false } : n);
-  return delay(undefined as unknown as void, 200);
+  return apiRequest<void>(`/api/notifications/${id}`, { 
+    method: 'PATCH' 
+  });
 }

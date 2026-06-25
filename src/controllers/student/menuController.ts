@@ -11,7 +11,7 @@ export async function fetchTodayMenu(): Promise<{ date: string; meals: MealWithU
     date: menu.date,
     meals: menu.meals.map(meal => ({
       ...meal,
-      usagePercent: meal.capacidade > 0 ? Math.round((meal.confirmados / meal.capacidade) * 100) : 0,
+      usagePercent: meal.capacity > 0 ? Math.round((meal.confirmedCount / meal.capacity) * 100) : 0,
     })),
   };
 }
@@ -23,7 +23,7 @@ export async function fetchWeekMenu(filter: string | null): Promise<WeekDay[]> {
     .map(day => ({
       ...day,
       meals: day.meals
-        .map(m => ({ ...m, dishes: m.dishes.filter(d => (d.tags ?? []).includes(filter as never)) }))
+        .map(m => ({ ...m, dishes: m.dishes.filter(d => (d.restrictions ?? []).includes(filter as never)) }))
         .filter(m => m.dishes.length > 0),
     }))
     .filter(day => day.meals.length > 0);

@@ -18,15 +18,21 @@ import { confirmationSchema, type ConfirmationForm } from '@/schemas/confirmatio
 import { cn } from '@/utils/cn';
 
 const PERIODS = [
-  { k: 'cafe' as const, l: 'Café' },
-  { k: 'almoco' as const, l: 'Almoço' },
-  { k: 'jantar' as const, l: 'Jantar' },
+  { k: 'breakfast' as const, l: 'Café da Manhã' },
+  { k: 'lunch' as const, l: 'Almoço' },
+  { k: 'dinner' as const, l: 'Jantar' },
 ];
 
 const TYPES = [
-  { k: 'padrao' as const, t: 'Refeição Padrão', s: 'Cardápio regular do dia' },
-  { k: 'adaptada' as const, t: 'Refeição Adaptada', s: 'Baseada nas suas restrições alimentares' },
+  { k: 'standard' as const, t: 'Refeição Padrão', s: 'Cardápio regular do dia' },
+  { k: 'adapted' as const, t: 'Refeição Adaptada', s: 'Baseada nas suas restrições alimentares' },
 ];
+
+const MEAL_LABELS: Record<string, string> = {
+  breakfast: 'Café da Manhã',
+  lunch: 'Almoço',
+  dinner: 'Jantar'
+};
 
 function HomeSkeleton() {
   return (
@@ -64,34 +70,35 @@ export default function StudentHomePage() {
   const { mutate: confirmMeal, isPending } = useConfirmMeal();
 
   const currentHour = new Date().getHours();
-  const defaultPeriod = currentHour >= 11 ? 'jantar' : 'almoco';
+  const defaultPeriod = currentHour >= 14 ? 'dinner' : 'lunch';
 
   const { control, handleSubmit, watch, reset } = useForm<ConfirmationForm>({
     resolver: zodResolver(confirmationSchema),
-    defaultValues: { period: defaultPeriod, type: 'padrao' },
+    defaultValues: { period: defaultPeriod, type: 'standard' },
   });
   const period = watch('period');
 
   useEffect(() => {
     if (confirmation) {
-      const normalizedPeriod = confirmation.period === 'almoco' ? 'almoco' : confirmation.period;
-      reset({ period: normalizedPeriod as any, type: confirmation.type as any });
+      reset({ 
+        period: confirmation.period, 
+        type: confirmation.type 
+      });
     } else {
-      reset({ period: defaultPeriod, type: 'padrao' });
+      reset({ period: defaultPeriod, type: 'standard' });
     }
   }, [confirmation, defaultPeriod, reset]);
 
   const handleOpenModal = (isEdit: boolean) => {
     if (isEdit && confirmation) {
-      const normalizedPeriod = confirmation.period === 'almoco' ? 'almoco' : confirmation.period;
       reset({
-        period: normalizedPeriod as any,
-        type: (confirmation.type as any) || 'padrao'
+        period: confirmation.period,
+        type: confirmation.type || 'standard'
       });
     } else {
       reset({
         period: defaultPeriod,
-        type: 'padrao'
+        type: 'standard'
       });
     }
     setIsConfirmModalOpen(true);
@@ -117,11 +124,7 @@ export default function StudentHomePage() {
   );
 
   const findMeal = (periodKey: string) => {
-    return data!.meals.find(m =>
-      (m as any).key === periodKey ||
-      m.label?.toLowerCase() === periodKey.toLowerCase() ||
-      (periodKey === 'almoco' && m.label?.toLowerCase() === 'almoço')
-    );
+    return data!.meals.find(m => m.period === periodKey);
   };
 
   const confirmedPeriod = confirmation?.period ?? defaultPeriod;
@@ -129,7 +132,7 @@ export default function StudentHomePage() {
   const fallbackMeal = findMeal(defaultPeriod) || data!.meals[0];
 
   const displayMeal = confirmed ? confirmedMeal : fallbackMeal;
-  const displayLabel = displayMeal?.label || (confirmedPeriod === 'jantar' ? 'Jantar' : 'Almoço');
+  const displayLabel = displayMeal ? MEAL_LABELS[displayMeal.period] : MEAL_LABELS[confirmedPeriod];
 
   const formattedDate = (() => {
     try {
@@ -177,14 +180,14 @@ export default function StudentHomePage() {
         <div className="row gap-20" style={{ flexWrap: 'wrap' }}>
           <div className="col gap-8" style={{ flex: 1, minWidth: 240 }}>
             <span className="text-xs" style={{ opacity: confirmed ? .85 : 1, color: confirmed ? 'rgba(255,255,255,0.85)' : 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 600 }}>
-              {displayLabel} {displayMeal?.time ? `· ${displayMeal.time}` : ''}
+              {displayLabel} {displayMeal?.startTime ? `· ${displayMeal.startTime} - ${displayMeal.endTime}` : ''}
             </span>
             <span style={{ fontSize: 24, fontWeight: 700 }}>
               {confirmed ? 'Refeição confirmada!' : 'Confirme sua presença'}
             </span>
             <span className="text-sm" style={{ opacity: .9 }}>
               {confirmed
-                ? 'Você nos ajudou a reduzir 0,5% do desperdício de alimentos hoje.'
+                ? 'Você nos ajudou a reduzir o desperdício de alimentos hoje.'
                 : 'Confirme para garantir sua refeição e evitar desperdícios.'}
             </span>
           </div>
@@ -206,8 +209,8 @@ export default function StudentHomePage() {
       <div className="col gap-16">
         <span className="h-section" style={{ fontSize: 20 }}>Cardápio de hoje</span>
         <div className="col gap-24">
-          {data!.meals.map((meal, index) => (
-            <MealSection key={meal.label || index} meal={meal} />
+          {data!.meals.map((meal) => (
+            <MealSection key={meal.id} meal={meal} />
           ))}
         </div>
       </div>
@@ -229,7 +232,7 @@ export default function StudentHomePage() {
                     key={p.k}
                     type="button"
                     onClick={() => field.onChange(p.k)}
-                    className={cn('btn', (field.value === p.k || (p.k === 'almoco' && field.value === 'almoco')) ? 'btn--primary' : 'btn--secondary')}
+                    className={cn('btn', field.value === p.k ? 'btn--primary' : 'btn--secondary')}
                   >
                     {p.l}
                   </button>
@@ -280,22 +283,7 @@ export default function StudentHomePage() {
           <Button type="submit" variant="primary" size="lg" block disabled={isPending}>
             {isPending
               ? 'Confirmando…'
-              : `Confirmar presença · ${(() => {
-                const labels: Record<string, string> = {
-                  'almoco': 'Almoço',
-                  'almoço': 'Almoço',
-                  'lunch': 'Almoço',
-                  'jantar': 'Jantar',
-                  'dinner': 'Jantar',
-                  'cafe': 'Café',
-                  'café': 'Café',
-                  'breakfast': 'Café'
-                };
-                const currentPeriod = period?.toLowerCase() || '';
-                return PERIODS.find(p => p.k === period)?.l || labels[currentPeriod] || period;
-              })()
-              }`
-            }
+              : `Confirmar presença · ${MEAL_LABELS[period] || period}`}
           </Button>
 
         </form>

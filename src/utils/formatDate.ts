@@ -10,12 +10,14 @@ export function getStockTone(status: 'ok' | 'low' | 'crit'): string {
 export function getDishCategoryLabel(cat: string): string {
   const map: Record<string, string> = {
     base: 'Base',
-    proteina: 'Proteína',
-    proteina_v: 'Vegetariana',
-    salada: 'Salada',
-    acomp: 'Acompanhamento',
-    sobremesa: 'Sobremesa',
-    bebida: 'Bebida',
+    protein: 'Proteína',
+    protein_v: 'Vegetariana',
+    salad: 'Salada',
+    side: 'Acompanhamento',
+    dessert: 'Sobremesa',
+    drink: 'Bebida',
   };
-  return map[cat] ?? cat;
+
+  const normalized = cat?.toLowerCase().trim() || '';
+  return map[normalized] ?? cat;
 }

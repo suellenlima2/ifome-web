@@ -11,12 +11,18 @@ import { DishDetails } from '@/components/student/DishDetails';
 import { useDishById, useWeekMenu } from '@/hooks/useMenu';
 
 const FILTERS = [
-  { k: null,          label: 'Todos'       },
-  { k: 'vegetarian',  label: 'Vegetariano' },
-  { k: 'vegan',       label: 'Vegano'      },
-  { k: 'glutenFree',  label: 'Sem glúten'  },
-  { k: 'lactoseFree', label: 'Sem lactose' },
+  { k: null,            label: 'Todos'       },
+  { k: 'vegetarian',    label: 'Vegetariano' },
+  { k: 'vegan',         label: 'Vegano'      },
+  { k: 'gluten_free',   label: 'Sem glúten'  },
+  { k: 'lactose_free',  label: 'Sem lactose' },
 ];
+
+const MEAL_LABELS: Record<string, string> = {
+  breakfast: 'Café da Manhã',
+  lunch: 'Almoço',
+  dinner: 'Jantar'
+};
 
 export default function StudentCardapioPage() {
   const [filter, setFilter] = useState<string | null>(null);
@@ -105,18 +111,18 @@ export default function StudentCardapioPage() {
               {day.today && <Tag tone="green">Hoje</Tag>}
             </div>
             <div className={i === 0 ? 'cardapio-grid-3' : 'cardapio-grid-2'}>
-              {day.meals.map((m: any, mi: number) => (
+              {day.meals?.map((m: any, mi: number) => (
                 <div 
                   key={mi} 
                   className="col gap-8" 
                   style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2)', border: '1px solid #f0f0f0' }}
                 >
                   <div className="between">
-                    <span className="weight-600 text-sm">{m.label}</span>
-                    <span className="text-xs muted">{m.time}</span>
+                    <span className="weight-600 text-sm">{MEAL_LABELS[m.period] || m.period}</span>
+                    <span className="text-xs muted">{`${m.startTime} - ${m.endTime}`}</span>
                   </div>
                   <div className="col gap-6">
-                    {m.dishes.slice(0, 4).map((d: any, di: number) => (
+                    {m.dishes?.slice(0, 4).map((d: any, di: number) => (
                       <button
                         key={d.id ?? di}
                         type="button"
@@ -129,10 +135,10 @@ export default function StudentCardapioPage() {
                         {d.name}
                       </button>
                     ))}
-                    {m.dishes.length > 4 && <span className="text-xs muted">+ {m.dishes.length - 4} pratos</span>}
+                    {m.dishes?.length > 4 && <span className="text-xs muted">+ {m.dishes.length - 4} pratos</span>}
                   </div>
                   <div className="row gap-6" style={{ flexWrap: 'wrap' }}>
-                    {[...new Set(m.dishes.flatMap((d: any) => d.tags ?? []))].slice(0, 4).map((t: any) => (
+                    {[...new Set(m.dishes?.flatMap((d: any) => d.restrictions ?? []))].slice(0, 4).map((t: any) => (
                       <RestrictionChip key={t} k={t} />
                     ))}
                   </div>
@@ -147,7 +153,7 @@ export default function StudentCardapioPage() {
         open={!!selectedDishId}
         onClose={() => setSelectedDishId(null)}
         title={selectedDish?.name ?? 'Detalhes do prato'}
-        sub={selectedDish ? `Categoria ${selectedDish.cat}` : undefined}
+        sub={selectedDish ? `Categoria ${selectedDish.category}` : undefined}
       >
         {isDishLoading ? (
           <div className="col gap-4">

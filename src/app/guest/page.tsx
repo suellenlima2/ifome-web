@@ -50,7 +50,7 @@ export default function GuestPage() {
                 <span className="h-page">Cardápio de hoje</span>
               </div>
               {data.meals.map(meal => (
-                <MealSection key={meal.key} meal={meal} />
+                <MealSection key={meal.id} meal={meal} />
               ))}
             </>
           ) : null}

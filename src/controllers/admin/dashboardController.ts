@@ -12,5 +12,12 @@ export async function fetchDashboardData(): Promise<DashboardData> {
     getDemand7d(),
     getRecentConfirmations(),
   ]);
-  return { menuToday, alerts, stock, demand7d, recentConfirmations };
+
+  return {
+    menuToday: menuToday as unknown,
+    alerts: alerts as unknown,
+    stock: stock as unknown,
+    demand7d: demand7d as unknown,
+    recentConfirmations: recentConfirmations as unknown,
+  } as DashboardData;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState} from 'react';
 import { RefreshCw, AlertCircle, CheckCircle, PieChart, Box, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/Button';
@@ -47,11 +47,27 @@ export default function AdminDashboardPage() {
   );
 
   const { menuToday, alerts, stock, demand7d, recentConfirmations } = data;
-  const almoco = menuToday.meals.find(m => m.key === 'almoco')!;
+  
+  const activeDay = menuToday?.day || menuToday;
+  
+  const horaAtual = new Date().getHours();
 
+  const periodoAtual = horaAtual < 15 ? 'lunch' : 'dinner';
+
+  const refeicaoAtual = activeDay?.meals?.find((m: any) => m.period === periodoAtual) 
+    || activeDay?.meals?.[0];
+
+  const timeFormatted = refeicaoAtual?.startTime && refeicaoAtual?.endTime 
+    ? `${refeicaoAtual.startTime} - ${refeicaoAtual.endTime}` 
+    : 'Sem horário';
+
+  // 5. Ajusta as variáveis para usar os dados dinâmicos da refeição atual
+  const confirmedCount = Array.isArray(recentConfirmations) ? recentConfirmations.length : 0;
+  const capacity = refeicaoAtual?.capacity || 200;
+  const usagePercent = capacity > 0 ? Math.round((confirmedCount / capacity) * 100) : 0;
   return (
     <>
-      <AdminTopbar title="Dashboard" sub={menuToday.date} />
+      <AdminTopbar title="Dashboard" sub={activeDay?.date || 'Hoje'} />
       <div className="main__scroll">
         <div className="col gap-24">
           <div className="banner" style={{ borderColor: 'var(--green-200)' }}>
@@ -66,10 +82,10 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="grid-4">
-            <Stat label="Confirmados hoje" value={almoco.confirmados} delta="+12% vs média" icon={CheckCircle} sub="almoço" href="/admin/confirmacoes?meal=Almoço" />
-            <Stat label="Capacidade usada" value={`${Math.round(almoco.confirmados / almoco.capacidade * 100)}%`} sub={`${almoco.confirmados}/${almoco.capacidade} pratos`} icon={PieChart} delta="Saudável" href="/admin/confirmacoes" />
-            <Stat label="Itens em falta" value={stock.filter(s => s.status !== 'ok').length} delta="3 críticos" deltaTone="down" icon={Box} sub="estoque" href="/admin/estoque" />
-            <Stat label="Alertas ativos" value={alerts.length} delta="2 não vistos" deltaTone="down" icon={AlertTriangle} sub="abertos" href="/admin/alertas" />
+            <Stat label="Confirmados hoje" value={confirmedCount} delta="+12% vs média" icon={CheckCircle} sub="almoço" href="/admin/confirmacoes?meal=Almoço" />
+            <Stat label="Capacidade usada" value={`${usagePercent}%`} sub={`${confirmedCount}/${capacity} pratos`} icon={PieChart} delta="Saudável" href="/admin/confirmacoes" />
+            <Stat label="Itens em falta" value={Array.isArray(stock) ? stock.filter(s => s.status !== 'ok').length : 0} delta="Verificar status" deltaTone="down" icon={Box} sub="estoque" href="/admin/estoque" />
+            <Stat label="Alertas ativos" value={Array.isArray(alerts) ? alerts.length : 0} delta="Ações pendentes" deltaTone="down" icon={AlertTriangle} sub="abertos" href="/admin/alertas" />
           </div>
 
           <div className="grid-2-1">
@@ -84,21 +100,22 @@ export default function AdminDashboardPage() {
                   <span className="row gap-6"><span style={{ width: 10, height: 10, background: 'var(--green-200)', borderRadius: 2 }} /> Jantar</span>
                 </div>
               </div>
-              <DemandChart data={demand7d} />
+              <DemandChart data={demand7d || []} />
             </div>
 
             <div className="card card--padded col gap-16">
               <div className="col">
-                <span className="h-section">Refeição atual</span>
-                <span className="text-xs muted">Almoço — {almoco.time}</span>
+                <span className="h-section">Refeição actual</span>
+                <span className="text-xs muted">Almoço — {timeFormatted}</span>
               </div>
-              <div className="row gap-16" style={{ alignItems: 'center', justifyContent: 'center' }}>
-                <Donut value={almoco.confirmados} max={almoco.capacidade} sublabel={`${almoco.confirmados}/${almoco.capacidade}`} />
-              </div>
+              {refeicaoAtual && (
+                <div className="row gap-16" style={{ alignItems: 'center', justifyContent: 'center' }}>
+                  <Donut value={confirmedCount} max={capacity} sublabel={`${confirmedCount}/${capacity}`} />
+                </div>
+              )}
               <div className="col gap-8">
-                <div className="between text-sm"><span className="muted">Padrão</span><span className="weight-600">312</span></div>
-                <div className="between text-sm"><span className="muted">Adaptada</span><span className="weight-600">75</span></div>
-                <div className="between text-sm"><span className="muted">Sem-mostras</span><span className="weight-600">4,2%</span></div>
+                <div className="between text-sm"><span className="muted">Uso Percentual</span><span className="weight-600">{refeicaoAtual?.usagePercent ?? usagePercent}%</span></div>
+                <div className="between text-sm"><span className="muted">Capacidade Total</span><span className="weight-600">{capacity}</span></div>
               </div>
             </div>
           </div>
@@ -107,11 +124,11 @@ export default function AdminDashboardPage() {
             <div className="between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--divider)' }}>
               <div className="col">
                 <span className="h-section">Confirmações recentes</span>
-                <span className="text-xs muted">Atualizado há 12 segundos</span>
+                <span className="text-xs muted">Atualizado em tempo real</span>
               </div>
               <Button variant="secondary" size="sm" icon={RefreshCw} onClick={() => refetch()}>Atualizar</Button>
             </div>
-            <ConfirmationTable confirmations={recentConfirmations} />
+            <ConfirmationTable confirmations={recentConfirmations || []} />
           </div>
         </div>
       </div>
