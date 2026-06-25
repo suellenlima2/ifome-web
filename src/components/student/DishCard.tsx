@@ -40,7 +40,7 @@ export function DishCard({ dish }: { dish: Dish }) {
           <span className="weight-700">{dish.name}</span>
           <span className="text-xs muted" style={{ minHeight: 32 }}>{dish.desc}</span>
           <div className="row gap-6" style={{ flexWrap: 'wrap' }}>
-            {dish.tags.slice(0, 5).map(t => <RestrictionChip key={t} k={t} />)}
+            {dish.tags?.slice(0, 5).map(t => <RestrictionChip key={t} k={t} />)}
           </div>
         </div>
       </div>

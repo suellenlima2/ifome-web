@@ -1,50 +1,67 @@
 import type { UserProfile, UserRole, MealHistory, RecentConfirmation } from '@/types';
-import { mockCurrentUser, mockAdminUser, mockHistory, mockRecentConfirmations } from '../mocks/userMocks';
+import { apiRequest } from './client';
 
-function delay<T>(data: T, ms = 600): Promise<T> {
-  return new Promise(resolve => setTimeout(() => resolve(data), ms));
+interface LoginResponse {
+  token: string;
+  user: {
+    role: UserRole;
+  };
 }
 
-let userProfile = { ...mockCurrentUser };
-let sessionUser: UserProfile | null = null;
-
-const MOCK_USERS = [
-  { email: 'js@aluno.ifal.edu.br', password: '123456',  profile: mockCurrentUser },
-  { email: 'admin@ifal.edu.br',      password: 'admin123', profile: mockAdminUser  },
-];
-
 export async function getCurrentUser(): Promise<UserProfile | null> {
-  return delay(sessionUser, 0);
+  if (typeof window !== 'undefined' && localStorage.getItem('token_ifome')) {
+    try {
+      return await getProfile();
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 export async function login(email: string, password: string): Promise<{ success: boolean; role?: UserRole }> {
-  const found = MOCK_USERS.find(u => u.email === email && u.password === password);
-  if (found) {
-    sessionUser = found.profile;
-    userProfile = { ...found.profile };
+  try {
+    const dados = await apiRequest<LoginResponse>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }), // Verifique na doc se é 'password' ou 'senha'
+    });
+
+    if (dados && dados.token) {
+      localStorage.setItem('token_ifome', dados.token);
+      return { success: true, role: dados.user?.role };
+    }
+    return { success: false };
+  } catch (error) {
+    console.error('Erro ao fazer login:', error);
+    return { success: false };
   }
-  return delay(found ? { success: true, role: found.profile.role } : { success: false }, 800);
 }
 
 export async function logout(): Promise<void> {
-  sessionUser = null;
-  return delay(undefined as unknown as void, 0);
+  try {
+    await apiRequest('/api/auth/logout', { method: 'POST' });
+  } catch (error) {
+    console.error('Erro no logout do servidor:', error);
+  } finally {
+    localStorage.removeItem('token_ifome');
+  }
 }
 
 export async function getProfile(): Promise<UserProfile> {
-  return delay(sessionUser ? { ...sessionUser } : { ...userProfile });
+  return apiRequest<UserProfile>('/api/users/profile');
 }
 
 export async function updateProfile(updates: Partial<UserProfile>): Promise<UserProfile> {
-  userProfile = { ...userProfile, ...updates };
-  if (sessionUser) sessionUser = { ...sessionUser, ...updates };
-  return delay({ ...userProfile }, 500);
+  return apiRequest<UserProfile>('/api/users/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
 }
 
 export async function getMealHistory(): Promise<MealHistory[]> {
-  return delay([...mockHistory]);
+  return apiRequest<MealHistory[]>('/api/users/meal-history');
 }
 
 export async function getRecentConfirmations(): Promise<RecentConfirmation[]> {
-  return delay([...mockRecentConfirmations]);
+  return [];
 }
