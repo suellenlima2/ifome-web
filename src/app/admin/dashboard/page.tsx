@@ -1,6 +1,6 @@
 'use client';
 
-import { useState} from 'react';
+import { useState, useMemo } from 'react';
 import { RefreshCw, AlertCircle, CheckCircle, PieChart, Box, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/Button';
@@ -39,32 +39,36 @@ export default function AdminDashboardPage() {
       <AdminTopbar title="Dashboard" />
       <div className="main__scroll center" style={{ height: 400 }}>
         <div className="col gap-12 center">
-          <span className="muted">Erro ao carregar o dashboard.</span>
+          <span className="muted">Erro ao carregar o dashboard (Sessão expirada ou erro 401).</span>
           <Button variant="secondary" size="sm" icon={RefreshCw} onClick={() => refetch()}>Tentar novamente</Button>
         </div>
       </div>
     </>
   );
 
-  const { menuToday, alerts, stock, demand7d, recentConfirmations } = data;
+  const dashboardPayload = data && (data as any).data ? (data as any).data : data;
+
+  const { menuToday, alerts = [], stock = [], demand7d = [], recentConfirmations = [] } = dashboardPayload || {};
   
-  const activeDay = menuToday?.day || menuToday;
+  const activeDay = menuToday?.day !== undefined ? menuToday?.day : menuToday;
   
   const horaAtual = new Date().getHours();
-
   const periodoAtual = horaAtual < 15 ? 'lunch' : 'dinner';
 
-  const refeicaoAtual = activeDay?.meals?.find((m: any) => m.period === periodoAtual) 
-    || activeDay?.meals?.[0];
+  const refeicaoAtual = activeDay?.meals?.find(
+    (m: any) => 
+      m.period?.toLowerCase() === periodoAtual || 
+      m.period?.toLowerCase() === (periodoAtual === 'lunch' ? 'almoco' : 'jantar')
+  ) || null;
 
   const timeFormatted = refeicaoAtual?.startTime && refeicaoAtual?.endTime 
     ? `${refeicaoAtual.startTime} - ${refeicaoAtual.endTime}` 
     : 'Sem horário';
 
-  // 5. Ajusta as variáveis para usar os dados dinâmicos da refeição atual
   const confirmedCount = Array.isArray(recentConfirmations) ? recentConfirmations.length : 0;
   const capacity = refeicaoAtual?.capacity || 200;
   const usagePercent = capacity > 0 ? Math.round((confirmedCount / capacity) * 100) : 0;
+
   return (
     <>
       <AdminTopbar title="Dashboard" sub={activeDay?.date || 'Hoje'} />
@@ -82,9 +86,9 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="grid-4">
-            <Stat label="Confirmados hoje" value={confirmedCount} delta="+12% vs média" icon={CheckCircle} sub="almoço" href="/admin/confirmacoes?meal=Almoço" />
+            <Stat label="Confirmados hoje" value={confirmedCount} delta="+12% vs média" icon={CheckCircle} sub={periodoAtual === 'lunch' ? 'almoço' : 'jantar'} href="/admin/confirmacoes" />
             <Stat label="Capacidade usada" value={`${usagePercent}%`} sub={`${confirmedCount}/${capacity} pratos`} icon={PieChart} delta="Saudável" href="/admin/confirmacoes" />
-            <Stat label="Itens em falta" value={Array.isArray(stock) ? stock.filter(s => s.status !== 'ok').length : 0} delta="Verificar status" deltaTone="down" icon={Box} sub="estoque" href="/admin/estoque" />
+            <Stat label="Itens em falta" value={Array.isArray(stock) ? stock.filter((s: any) => s.status !== 'ok').length : 0} delta="Verificar status" deltaTone="down" icon={Box} sub="estoque" href="/admin/estoque" />
             <Stat label="Alertas ativos" value={Array.isArray(alerts) ? alerts.length : 0} delta="Ações pendentes" deltaTone="down" icon={AlertTriangle} sub="abertos" href="/admin/alertas" />
           </div>
 
@@ -105,8 +109,8 @@ export default function AdminDashboardPage() {
 
             <div className="card card--padded col gap-16">
               <div className="col">
-                <span className="h-section">Refeição actual</span>
-                <span className="text-xs muted">Almoço — {timeFormatted}</span>
+                <span className="h-section">Refeição atual</span>
+                <span className="text-xs muted">{periodoAtual === 'lunch' ? 'Almoço' : 'Jantar'} — {timeFormatted}</span>
               </div>
               {refeicaoAtual && (
                 <div className="row gap-16" style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -114,7 +118,7 @@ export default function AdminDashboardPage() {
                 </div>
               )}
               <div className="col gap-8">
-                <div className="between text-sm"><span className="muted">Uso Percentual</span><span className="weight-600">{refeicaoAtual?.usagePercent ?? usagePercent}%</span></div>
+                <div className="between text-sm"><span className="muted">Uso Percentual</span><span className="weight-600">{usagePercent}%</span></div>
                 <div className="between text-sm"><span className="muted">Capacidade Total</span><span className="weight-600">{capacity}</span></div>
               </div>
             </div>

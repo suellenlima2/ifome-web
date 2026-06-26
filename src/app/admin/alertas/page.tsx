@@ -53,7 +53,6 @@ export default function AdminAlertasPage() {
     </>
   );
 
-  // Garante a leitura correta se a API retornar os dados paginados e envelopados na chave 'data'
   const alertsList: Alert[] = Array.isArray(alertsData) ? alertsData : (alertsData as any)?.data ?? [];
 
   if (!alertsList.length) return (

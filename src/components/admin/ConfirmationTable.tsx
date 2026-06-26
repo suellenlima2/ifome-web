@@ -23,7 +23,6 @@ export function ConfirmationTable({ confirmations }: { confirmations: RecentConf
         </thead>
         <tbody>
           {confirmations.map(r => {
-            // A API retorna userName e userEnrollment
             const name = r.userName ?? (r as any).studentName ?? '—';
             const enrollment = r.userEnrollment ?? (r as any).studentId ?? '—';
             const confirmedAt = r.confirmedAt

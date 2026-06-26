@@ -207,7 +207,6 @@ export interface MealHistoryResponse {
   totalPages: number;
 }
 
-// Interface do Dashboard atualizada para englobar a chave "day" conforme imagem image_8440fb.png
 export interface DashboardData {
   menuToday: {
     day: MenuToday;
