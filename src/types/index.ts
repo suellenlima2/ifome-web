@@ -209,7 +209,7 @@ export interface MealHistoryResponse {
 
 export interface DashboardData {
   menuToday: {
-    day: MenuToday;
+    day: MenuToday | null;
   };
   alerts: Alert[];
   stock: StockItem[];
