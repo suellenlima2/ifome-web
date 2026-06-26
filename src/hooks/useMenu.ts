@@ -3,8 +3,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { fetchTodayMenu, fetchWeekMenu, fetchDishById, submitConfirmation, fetchTodayConfirmation, submitCancellation } from '@/controllers/student/menuController';
-import type { ConfirmationPayload } from '@/types';
+import type { ConfirmationPayload, MenuToday } from '@/types';
 import { toast } from 'react-toastify';
+import { apiRequest } from '@/services/api/client';
 
 export function useTodayMenu() {
   return useQuery({
@@ -23,12 +24,16 @@ export function useWeekMenu(filter: string | null) {
 
   const filtered = useMemo(() => {
     if (!query.data || !filter) return query.data;
-    return query.data
+    
+    return (query.data as any[])
       .map(day => ({
         ...day,
         meals: day.meals
-          .map(m => ({ ...m, dishes: m.dishes.filter(d => (d.tags ?? []).includes(filter as never)) }))
-          .filter(m => m.dishes.length > 0),
+          ?.map((m: any) => ({ 
+            ...m, 
+            dishes: m.dishes?.filter((d: any) => (d.restrictions ?? []).includes(filter as string)) ?? [] 
+          }))
+          .filter((m: any) => m.dishes.length > 0) ?? [],
       }))
       .filter(day => day.meals.length > 0);
   }, [query.data, filter]);
@@ -74,6 +79,30 @@ export function useCancelConfirmation() {
     mutationFn: submitCancellation,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['meal-confirmation'] });
+      toast.success('Confirmação cancelada com sucesso!');
     },
+    onError: () => {
+      toast.error('Erro ao cancelar confirmação.');
+    }
+  });
+}
+
+export function useSaveMenuAdmin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { date: string; meals: any[] }) => {
+      return apiRequest<MenuToday>('/api/menu', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['menu'] });
+      toast.success('Cardápio salvo na API com sucesso!');
+    },
+    onError: (error: any) => {
+      console.error(error);
+      toast.error('Falha ao salvar cardápio no servidor.');
+    }
   });
 }

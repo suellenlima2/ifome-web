@@ -1,54 +1,47 @@
-import type { MenuToday, WeekDay, Dish, ConfirmationPayload } from '@/types';
-import { mockMenuToday, mockNextDays } from '../mocks/menuMocks';
-
-function delay<T>(data: T, ms = 800): Promise<T> {
-  return new Promise(resolve => setTimeout(() => resolve(data), ms));
-}
-
-let confirmedMeal: ConfirmationPayload | null = null;
+import type { MenuToday, WeekDay, Dish, ConfirmationPayload, MealConfirmation, RecentConfirmationsResponse } from '@/types';
+import { apiRequest } from './client';
 
 export async function getMenuToday(): Promise<MenuToday> {
-  return delay(mockMenuToday);
-}
-
-function getTodayDateStr(): string {
-  const now = new Date();
-  const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-  const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-  return `${days[now.getDay()]}, ${String(now.getDate()).padStart(2, '0')} ${months[now.getMonth()]}`;
+  return apiRequest<MenuToday>('/api/menu/today');
 }
 
 export async function getWeekMenu(): Promise<WeekDay[]> {
-  const todayStr = getTodayDateStr();
-  const weekDays: WeekDay[] = [
-    { date: todayStr, today: true, meals: mockMenuToday.meals },
-    ...mockNextDays.map(d => ({
-      date: d.date,
-      today: d.date === todayStr,
-      meals: [
-        { label: 'Almoço', time: '11:00–14:00', dishes: [{ id: `w-a-${d.date}`, name: d.almoco, tags: [], desc: 'Prato principal', cat: 'proteina' as const }] },
-        { label: 'Jantar', time: '17:30–19:30', dishes: [{ id: `w-j-${d.date}`, name: d.jantar, tags: [], desc: 'Prato principal', cat: 'proteina' as const }] },
-      ],
-    })),
-  ];
-  return delay(weekDays);
+  return apiRequest<WeekDay[]>('/api/menu/week');
 }
 
 export async function getDishById(id: string): Promise<Dish | undefined> {
-  const all = mockMenuToday.meals.flatMap(m => m.dishes);
-  return delay(all.find(d => d.id === id));
+  try {
+    return await apiRequest<Dish>(`/api/menu/dishes/${id}`);
+  } catch (error) {
+    console.error(`Erro ao buscar o prato ${id}:`, error);
+    return undefined;
+  }
 }
 
 export async function confirmMeal(payload: ConfirmationPayload): Promise<void> {
-  confirmedMeal = payload;
-  return delay(undefined as unknown as void, 600);
+  return apiRequest<void>('/api/confirmations', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }
 
-export async function getConfirmedMeal(): Promise<ConfirmationPayload | null> {
-  return delay(confirmedMeal, 0);
+export async function getConfirmedMeal(): Promise<MealConfirmation | null> {
+  try {
+    return await apiRequest<MealConfirmation>('/api/confirmations/today');
+  } catch (error: any) {
+    if (error.message?.includes('403') || error.message?.includes('404')) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function cancelMeal(): Promise<void> {
-  confirmedMeal = null;
-  return delay(undefined as unknown as void, 0);
+  return apiRequest<void>('/api/confirmations/today', { 
+    method: 'DELETE' 
+  });
+}
+
+export async function getRecentConfirmationsAdmin(page = 1, pageSize = 10): Promise<RecentConfirmationsResponse> {
+  return apiRequest<RecentConfirmationsResponse>(`/api/confirmations/recent?page=${page}&pageSize=${pageSize}`);
 }

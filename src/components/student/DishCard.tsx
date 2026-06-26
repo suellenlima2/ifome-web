@@ -12,12 +12,12 @@ export function DishCard({ dish }: { dish: Dish }) {
 
   return (
     <>
-      <div 
+      <div
         onClick={() => setIsOpen(true)}
-        className="card" 
-        style={{ 
-          overflow: 'hidden', 
-          cursor: 'pointer', 
+        className="card"
+        style={{
+          overflow: 'hidden',
+          cursor: 'pointer',
           height: '100%',
           transition: 'transform 0.2s, box-shadow 0.2s'
         }}
@@ -33,23 +33,25 @@ export function DishCard({ dish }: { dish: Dish }) {
         }}>
           <Utensils size={32} />
           <div style={{ position: 'absolute', top: 8, left: 8 }}>
-            <Tag tone="gray">{getDishCategoryLabel(dish.cat)}</Tag>
+            <Tag tone="gray">{getDishCategoryLabel(dish.category)}</Tag>
           </div>
         </div>
         <div className="col gap-8" style={{ padding: 14 }}>
           <span className="weight-700">{dish.name}</span>
-          <span className="text-xs muted" style={{ minHeight: 32 }}>{dish.desc}</span>
+          <span className="text-xs muted" style={{ minHeight: 32 }}>{dish.description}</span>
           <div className="row gap-6" style={{ flexWrap: 'wrap' }}>
-            {dish.tags.slice(0, 5).map(t => <RestrictionChip key={t} k={t} />)}
+            {dish.restrictions?.slice(0, 5).map(t => (
+              <RestrictionChip key={t} k={t} />
+            ))}
           </div>
         </div>
       </div>
 
-      <Modal 
-        open={isOpen} 
-        onClose={() => setIsOpen(false)} 
+      <Modal
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
         title={dish.name}
-        sub={`Categoria ${getDishCategoryLabel(dish.cat)}`}
+        sub={`Categoria ${getDishCategoryLabel(dish.category)}`}
       >
         <DishDetails dish={dish} />
       </Modal>

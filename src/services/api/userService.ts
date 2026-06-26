@@ -1,50 +1,90 @@
-import type { UserProfile, UserRole, MealHistory, RecentConfirmation } from '@/types';
-import { mockCurrentUser, mockAdminUser, mockHistory, mockRecentConfirmations } from '../mocks/userMocks';
+import type { UserProfile, UserRole, MealHistory, MealHistoryResponse, RecentConfirmation, RecentConfirmationsResponse } from '@/types';
+import { apiRequest } from './client';
 
-function delay<T>(data: T, ms = 600): Promise<T> {
-  return new Promise(resolve => setTimeout(() => resolve(data), ms));
+interface LoginResponse {
+  token: string;
+  user: {
+    role: UserRole;
+  };
 }
 
-let userProfile = { ...mockCurrentUser };
-let sessionUser: UserProfile | null = null;
-
-const MOCK_USERS = [
-  { email: 'js@aluno.ifal.edu.br', password: '123456',  profile: mockCurrentUser },
-  { email: 'admin@ifal.edu.br',      password: 'admin123', profile: mockAdminUser  },
-];
-
 export async function getCurrentUser(): Promise<UserProfile | null> {
-  return delay(sessionUser, 0);
+  if (typeof window !== 'undefined' && localStorage.getItem('token_ifome')) {
+    try {
+      return await getProfile();
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 export async function login(email: string, password: string): Promise<{ success: boolean; role?: UserRole }> {
-  const found = MOCK_USERS.find(u => u.email === email && u.password === password);
-  if (found) {
-    sessionUser = found.profile;
-    userProfile = { ...found.profile };
+  try {
+    const dados = await apiRequest<LoginResponse>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (dados && dados.token) {
+      localStorage.setItem('token_ifome', dados.token);
+      return { success: true, role: dados.user?.role };
+    }
+    return { success: false };
+  } catch (error) {
+    console.error('Erro ao fazer login:', error);
+    return { success: false };
   }
-  return delay(found ? { success: true, role: found.profile.role } : { success: false }, 800);
 }
 
 export async function logout(): Promise<void> {
-  sessionUser = null;
-  return delay(undefined as unknown as void, 0);
+  try {
+    await apiRequest('/api/auth/logout', { method: 'POST' });
+  } catch (error) {
+    console.error('Erro no logout do servidor:', error);
+  } finally {
+    localStorage.removeItem('token_ifome');
+  }
 }
 
 export async function getProfile(): Promise<UserProfile> {
-  return delay(sessionUser ? { ...sessionUser } : { ...userProfile });
+  const response = await apiRequest<UserProfile | { data: UserProfile }>('/api/users/profile');
+  // Suporta resposta envelopada { data: {...} } ou direta
+  if (response && (response as any).data && typeof (response as any).data === 'object' && (response as any).data.id) {
+    return (response as any).data as UserProfile;
+  }
+  return response as UserProfile;
 }
 
 export async function updateProfile(updates: Partial<UserProfile>): Promise<UserProfile> {
-  userProfile = { ...userProfile, ...updates };
-  if (sessionUser) sessionUser = { ...sessionUser, ...updates };
-  return delay({ ...userProfile }, 500);
+  const response = await apiRequest<UserProfile | { data: UserProfile }>('/api/users/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+  if (response && (response as any).data && typeof (response as any).data === 'object') {
+    return (response as any).data as UserProfile;
+  }
+  return response as UserProfile;
 }
 
 export async function getMealHistory(): Promise<MealHistory[]> {
-  return delay([...mockHistory]);
+  const response = await apiRequest<MealHistoryResponse | MealHistory[]>('/api/users/meal-history');
+  // Suporta paginação { data: [...] } ou array direto
+  if (response && (response as MealHistoryResponse).data) {
+    return (response as MealHistoryResponse).data;
+  }
+  return response as MealHistory[];
 }
 
 export async function getRecentConfirmations(): Promise<RecentConfirmation[]> {
-  return delay([...mockRecentConfirmations]);
+  // Usa o endpoint de confirmações recentes do admin
+  try {
+    const response = await apiRequest<RecentConfirmationsResponse | RecentConfirmation[]>('/api/confirmations/recent?page=1&pageSize=10');
+    if (response && (response as RecentConfirmationsResponse).data) {
+      return (response as RecentConfirmationsResponse).data;
+    }
+    return response as RecentConfirmation[];
+  } catch {
+    return [];
+  }
 }

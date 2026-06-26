@@ -12,14 +12,15 @@ import { Field } from '@/components/ui/Field';
 import { TextInput } from '@/components/ui/TextInput';
 import { AdminTopbar } from '@/components/layout/AdminTopbar';
 import { AlertCard } from '@/components/admin/AlertCard';
-import { useAlerts } from '@/hooks/useAlerts';
+import { useAlerts, useResolveAlert } from '@/hooks/useAlerts';
 import { useStock, useUpdateStock } from '@/hooks/useStock';
-import type { StockStatus } from '@/types';
+import type { StockStatus, Alert } from '@/types';
 
 export default function AdminAlertasPage() {
-  const { data: alerts, isLoading, isError, refetch } = useAlerts();
+  const { data: alertsData, isLoading, isError, refetch } = useAlerts();
   const { data: stock } = useStock('all');
   const { mutate: updateStock } = useUpdateStock();
+  const { mutate: resolveAlert, isPending: resolvingAll } = useResolveAlert();
   const [editingLimits, setEditingLimits] = useState(false);
   const [limits, setLimits] = useState<Record<string, number>>({});
 
@@ -52,7 +53,9 @@ export default function AdminAlertasPage() {
     </>
   );
 
-  if (!alerts?.length) return (
+  const alertsList: Alert[] = Array.isArray(alertsData) ? alertsData : (alertsData as any)?.data ?? [];
+
+  if (!alertsList.length) return (
     <>
       <AdminTopbar title="Alertas" />
       <div className="main__scroll">
@@ -61,7 +64,7 @@ export default function AdminAlertasPage() {
             icon={CheckCircle}
             title="Nenhum alerta ativo"
             body="Tudo dentro dos limites configurados."
-            action={<Button variant="secondary" size="sm" icon={Settings}>Configurar limites</Button>}
+            action={<Button variant="secondary" size="sm" icon={Settings} onClick={() => setEditingLimits(true)}>Configurar limites</Button>}
           />
         </div>
       </div>
@@ -70,16 +73,16 @@ export default function AdminAlertasPage() {
 
   return (
     <>
-      <AdminTopbar title="Alertas" sub={`${alerts.length} alertas ativos`} />
+      <AdminTopbar title="Alertas" sub={`${alertsList.length} alertas ativos`} />
       <div className="main__scroll">
         <div className="grid-2-1">
           <div className="card">
             <div className="between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--divider)' }}>
-              <span className="h-section">Central de Alertas · {alerts.length} ativos</span>
-              <Button variant="ghost" size="sm" onClick={() => toast.success('Todos os alertas marcados como lidos!')}>Marcar tudo como lido</Button>
+              <span className="h-section">Central de Alertas · {alertsList.length} ativos</span>
+              <Button variant="ghost" size="sm" disabled={resolvingAll} onClick={() => alertsList.forEach(a => resolveAlert(a.id))}>Marcar tudo como lido</Button>
             </div>
             <div className="col">
-              {alerts.map(a => <AlertCard key={a.id} alert={a} />)}
+              {alertsList.map(a => <AlertCard key={a.id} alert={a} />)}
             </div>
           </div>
 
@@ -91,15 +94,15 @@ export default function AdminAlertasPage() {
                 <div key={s.id} className="col gap-4">
                   <div className="between text-sm">
                     <span className="weight-500">{s.name}</span>
-                    <span className="mono muted">{s.min} {s.unit}</span>
+                    <span className="mono muted">{s.minQuantity} {s.unit}</span>
                   </div>
-                  <Bar value={s.stock} max={s.max} tone={s.status} />
+                  <Bar value={s.currentQuantity} max={s.maxQuantity} tone={s.status} />
                 </div>
               ))}
             </div>
             <Button variant="secondary" size="sm" icon={Settings} block onClick={() => {
               const initial: Record<string, number> = {};
-              (stock ?? []).slice(0, 5).forEach(s => { initial[s.id] = s.min; });
+              (stock ?? []).slice(0, 5).forEach(s => { initial[s.id] = s.minQuantity; });
               setLimits(initial);
               setEditingLimits(true);
             }}>Editar todos os limites</Button>
@@ -117,9 +120,15 @@ export default function AdminAlertasPage() {
             <Button variant="primary" onClick={() => {
               (stock ?? []).slice(0, 5).forEach(s => {
                 const newMin = limits[s.id];
-                if (newMin !== undefined && newMin !== s.min) {
-                  const newStatus: StockStatus = s.stock < newMin ? (s.stock < newMin * 0.5 ? 'crit' : 'low') : 'ok';
-                  updateStock({ id: s.id, updates: { min: newMin, status: newStatus } });
+                if (newMin !== undefined && newMin !== s.minQuantity) {
+                  const newStatus: StockStatus = s.currentQuantity < newMin 
+                    ? (s.currentQuantity < newMin * 0.5 ? 'crit' : 'low') 
+                    : 'ok';
+                  
+                  updateStock({ 
+                    id: s.id, 
+                    updates: { ...s, minQuantity: newMin, status: newStatus } 
+                  } as any);
                 }
               });
               setEditingLimits(false);
@@ -130,10 +139,10 @@ export default function AdminAlertasPage() {
       >
         <div className="col gap-12">
           {(stock ?? []).slice(0, 5).map(s => (
-            <Field key={s.id} label={`${s.name} (atual: ${s.stock} ${s.unit})`}>
+            <Field key={s.id} label={`${s.name} (atual: ${s.currentQuantity} ${s.unit})`}>
               <TextInput
                 type="number"
-                value={limits[s.id] ?? s.min}
+                value={limits[s.id] ?? s.minQuantity}
                 onChange={e => setLimits(prev => ({ ...prev, [s.id]: Number(e.target.value) }))}
               />
             </Field>

@@ -7,12 +7,8 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { NotificationItem } from '@/components/student/NotificationItem';
 import { useNotifications, useMarkAllRead, useMarkOneRead } from '@/hooks/useNotifications';
 
-export default function NotificacoesPage() {
-  const { data, isLoading } = useNotifications();
-  const { mutate: markAll, isPending } = useMarkAllRead();
-  const { mutate: markOne } = useMarkOneRead();
-
-  if (isLoading) return (
+export function NotificacoesPageSkeleton() {
+  return (
     <div style={{ maxWidth: 720, margin: '0 auto' }}>
       <div style={{ marginBottom: 20 }}><Skeleton h={36} w={200} r={8} /></div>
       <div className="card col gap-12" style={{ padding: 16 }}>
@@ -28,7 +24,17 @@ export default function NotificacoesPage() {
       </div>
     </div>
   );
+}
 
+export default function NotificacoesPage() {
+  // O hook já resolve o contrato do Swagger e entrega o objeto tratado
+  const { data, isLoading } = useNotifications();
+  const { mutate: markAll, isPending } = useMarkAllRead();
+  const { mutate: markOne } = useMarkOneRead();
+
+  if (isLoading) return <NotificacoesPageSkeleton />;
+
+  // Desestrutura diretamente do retorno tratado do hook
   const { today = [], earlier = [], unreadCount = 0 } = data ?? {};
 
   if (today.length === 0 && earlier.length === 0) return (
@@ -48,9 +54,11 @@ export default function NotificacoesPage() {
       <div className="between" style={{ marginBottom: 20 }}>
         <div className="col gap-4">
           <span className="h-page">Notificações</span>
-          <span className="muted">{unreadCount} não lida{unreadCount !== 1 ? 's' : ''}</span>
+          <span className="muted">
+            {unreadCount} não lida{unreadCount !== 1 ? 's' : ''}
+          </span>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => markAll()} disabled={isPending}>
+        <Button variant="ghost" size="sm" onClick={() => markAll()} disabled={isPending || unreadCount === 0}>
           Marcar tudo como lido
         </Button>
       </div>
@@ -61,7 +69,9 @@ export default function NotificacoesPage() {
             <div className="text-xs weight-600 muted" style={{ padding: '12px 16px', textTransform: 'uppercase', letterSpacing: '.05em', borderBottom: '1px solid var(--divider)' }}>
               Hoje
             </div>
-            {today.map(n => <NotificationItem key={n.id} notification={n} onMarkRead={() => markOne(n.id)} />)}
+            {today.map(n => (
+              <NotificationItem key={n.id} notification={n} onMarkRead={() => markOne(n.id)} />
+            ))}
           </>
         )}
         {earlier.length > 0 && (
@@ -69,7 +79,9 @@ export default function NotificacoesPage() {
             <div className="text-xs weight-600 muted" style={{ padding: '12px 16px', textTransform: 'uppercase', letterSpacing: '.05em', borderBottom: '1px solid var(--divider)' }}>
               Anteriores
             </div>
-            {earlier.map(n => <NotificationItem key={n.id} notification={n} onMarkRead={() => markOne(n.id)} />)}
+            {earlier.map(n => (
+              <NotificationItem key={n.id} notification={n} onMarkRead={() => markOne(n.id)} />
+            ))}
           </>
         )}
       </div>

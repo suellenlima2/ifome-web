@@ -1,24 +1,39 @@
-import type { StockItem } from '@/types';
-import { mockStock } from '../mocks/stockMocks';
+import { apiRequest } from './client';
+import type { StockItem, StockResponse, StockMovementsResponse } from '@/types';
 
-function delay<T>(data: T, ms = 700): Promise<T> {
-  return new Promise(resolve => setTimeout(() => resolve(data), ms));
+export async function getStock(page = 1, pageSize = 50): Promise<StockItem[]> {
+  const response = await apiRequest<StockResponse | StockItem[]>(`/api/stock?page=${page}&pageSize=${pageSize}`);
+  // Suporta resposta paginada { data: [...] } ou array direto
+  if (response && (response as StockResponse).data) {
+    return (response as StockResponse).data;
+  }
+  return response as StockItem[];
 }
 
-let stockData = [...mockStock];
-
-export async function getStock(): Promise<StockItem[]> {
-  return delay([...stockData]);
+export async function createStockItem(item: Omit<StockItem, 'id' | 'status' | 'createdAt' | 'updatedAt'>): Promise<StockItem> {
+  return apiRequest<StockItem>('/api/stock', {
+    method: 'POST',
+    body: JSON.stringify(item),
+  });
 }
 
 export async function updateStockItem(id: string, updates: Partial<StockItem>): Promise<StockItem> {
-  stockData = stockData.map(s => s.id === id ? { ...s, ...updates } : s);
-  const updated = stockData.find(s => s.id === id)!;
-  return delay(updated, 500);
+  return apiRequest<StockItem>(`/api/stock/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
 }
 
-export async function createStockItem(item: Omit<StockItem, 'id'>): Promise<StockItem> {
-  const newItem: StockItem = { ...item, id: `s${Date.now()}` };
-  stockData.push(newItem);
-  return delay(newItem, 500);
+export async function deleteStockItem(id: string): Promise<void> {
+  return apiRequest<void>(`/api/stock/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function getStockItemDetails(id: string): Promise<StockItem> {
+  return apiRequest<StockItem>(`/api/stock/${id}`);
+}
+
+export async function getStockMovements(stockItemId: string, page = 1, pageSize = 20): Promise<StockMovementsResponse> {
+  return apiRequest<StockMovementsResponse>(`/api/stock/${stockItemId}/movements?page=${page}&pageSize=${pageSize}`);
 }

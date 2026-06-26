@@ -1,22 +1,22 @@
-import type { Notification } from '@/types';
-import { mockNotifications } from '../mocks/notificationMocks';
+import { apiRequest } from './client';
+import type { Notification, NotificationResponse } from '@/types';
 
-function delay<T>(data: T, ms = 600): Promise<T> {
-  return new Promise(resolve => setTimeout(() => resolve(data), ms));
-}
-
-let notifications = [...mockNotifications];
-
-export async function getNotifications(): Promise<Notification[]> {
-  return delay([...notifications]);
+export async function getNotifications(page = 1, pageSize = 50): Promise<Notification[]> {
+  const response = await apiRequest<NotificationResponse | Notification[]>(`/api/notifications?page=${page}&pageSize=${pageSize}`);
+  if (response && (response as NotificationResponse).data) {
+    return (response as NotificationResponse).data;
+  }
+  return response as Notification[];
 }
 
 export async function markAllRead(): Promise<void> {
-  notifications = notifications.map(n => ({ ...n, unread: false }));
-  return delay(undefined as unknown as void, 300);
+  return apiRequest<void>('/api/notifications/read-all', {
+    method: 'POST',
+  });
 }
 
 export async function markOneRead(id: string): Promise<void> {
-  notifications = notifications.map(n => n.id === id ? { ...n, unread: false } : n);
-  return delay(undefined as unknown as void, 200);
+  return apiRequest<void>(`/api/notifications/${id}/read`, {
+    method: 'POST',
+  });
 }

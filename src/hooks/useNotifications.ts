@@ -18,8 +18,11 @@ export function useMarkAllRead() {
     mutationFn: markNotificationsRead,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['notifications'] });
-      toast.success('Todas as notificações marcadas como lidas.');
+      toast.success('Todas as notificações foram marcadas como lidas.');
     },
+    onError: () => {
+      toast.error('Não foi possível atualizar as notificações.');
+    }
   });
 }
 
@@ -30,5 +33,8 @@ export function useMarkOneRead() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['notifications'] });
     },
+    onError: () => {
+      toast.error('Erro ao marcar notificação como lida.');
+    }
   });
 }

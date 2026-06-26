@@ -16,13 +16,22 @@ interface NotificationItemProps {
 
 export function NotificationItem({ notification, onMarkRead }: NotificationItemProps) {
   const Icon = iconMap[notification.icon] ?? Bell;
+  
+  // O Swagger usa o booleano positivo ".read" (Lido). Uma notificação não lida é o inverso disso.
+  const isUnread = !notification.read;
+
+  // Formata de forma amigável o horário de recepção se contiver a string ISO
+  const formattedTime = notification.createdAt && notification.createdAt.includes('T')
+    ? notification.createdAt.split('T')[1].substring(0, 5)
+    : notification.createdAt || '';
+
   return (
     <div
       className="row gap-12"
       style={{
         padding: 16,
         borderBottom: '1px solid var(--divider)',
-        background: notification.unread ? 'var(--brand-soft)' : 'transparent',
+        background: isUnread ? 'var(--brand-soft)' : 'transparent',
       }}
     >
       <span className="center" style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--surface)', color: 'var(--brand-text)', flexShrink: 0 }}>
@@ -31,12 +40,12 @@ export function NotificationItem({ notification, onMarkRead }: NotificationItemP
       <div className="col" style={{ flex: 1 }}>
         <div className="row gap-8" style={{ alignItems: 'center' }}>
           <span className="weight-600 text-sm">{notification.title}</span>
-          {notification.unread && <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--brand)' }} />}
+          {isUnread && <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--brand)' }} />}
         </div>
         <span className="text-sm muted">{notification.body}</span>
-        <span className="text-xs muted" style={{ marginTop: 4 }}>{notification.at}</span>
+        <span className="text-xs muted" style={{ marginTop: 4 }}>{formattedTime}</span>
       </div>
-      {notification.unread && onMarkRead && (
+      {isUnread && onMarkRead && (
         <button
           onClick={onMarkRead}
           title="Marcar como lida"

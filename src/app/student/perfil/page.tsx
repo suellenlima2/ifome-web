@@ -48,10 +48,21 @@ export default function PerfilPage() {
     } : undefined,
   });
 
-  const displayHistory = useMemo(
-    () => history?.slice(0, 4) ?? [],
-    [history],
-  );
+  // Extrai com segurança a lista correta de histórico tratando paginação do backend
+  const displayHistory = useMemo(() => {
+    if (!history) return [];
+    
+    if (Array.isArray(history)) {
+      return history.slice(0, 4);
+    }
+    
+    const list = (history as any).content || (history as any).data || (history as any).history;
+    if (Array.isArray(list)) {
+      return list.slice(0, 4);
+    }
+    
+    return [];
+  }, [history]);
 
   const toggleRestriction = (k: RestrictionKey) => {
     setRestrictions(prev => prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k]);
@@ -102,19 +113,23 @@ export default function PerfilPage() {
         }
       >
         <div className="col gap-8 scroll-y" style={{ maxHeight: 340, paddingRight: 4 }}>
-          {history && history.length > 0 ? (
-            history.map((h, i) => <MealHistoryItem key={i} item={h} />)
-          ) : (
-            <Empty icon={History} title="Nenhuma refeição ainda" body="Suas confirmações aparecerão aqui." />
-          )}
+          {(() => {
+            const actualHistory = Array.isArray(history) 
+              ? history 
+              : ((history as any)?.content || (history as any)?.data || (history as any)?.history || []);
+              
+            return actualHistory.length > 0 ? (
+              actualHistory.map((h: any, i: number) => <MealHistoryItem key={i} item={h} />)
+            ) : (
+              <Empty icon={History} title="Nenhuma refeição ainda" body="Suas confirmações aparecerão aqui." />
+            );
+          })()}
         </div>
       </Modal>
       
       <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
         <div className="col gap-20" style={{ maxWidth: 920, margin: '0 auto', width: '100%', padding: '0 16px' }}>
           
-
-
           <div className="card" style={{ overflow: 'hidden' }}>
             <div style={{ height: 100, background: 'linear-gradient(135deg, var(--green-700) 0%, var(--green-500) 100%)' }} />
             
@@ -147,7 +162,7 @@ export default function PerfilPage() {
                   {profile.name}
                 </span>
                 <span className="text-sm muted" style={{ display: 'block', marginTop: 4 }}>
-                  {profile.curso} · Matrícula {profile.matricula}
+                  {profile.course || 'Estudante'} · Matrícula {profile.enrollment || 'N/A'}
                 </span>
               </div>
             </div>
@@ -211,11 +226,17 @@ export default function PerfilPage() {
                     {displayHistory.map((h, i) => <MealHistoryItem key={i} item={h} />)}
                   </div>
                 )}
-                {history && history.length > 4 && (
-                  <Button type="button" variant="ghost" size="sm" block icon={History} onClick={() => setIsHistoryOpen(true)}>
-                    Ver histórico completo
-                  </Button>
-                )}
+                {(() => {
+                  const total = Array.isArray(history) 
+                    ? history.length 
+                    : ((history as any)?.content || (history as any)?.data || (history as any)?.history || []).length;
+                    
+                  return total > 4 && (
+                    <Button type="button" variant="ghost" size="sm" block icon={History} onClick={() => setIsHistoryOpen(true)}>
+                      Ver histórico completo
+                    </Button>
+                  );
+                })()}
               </div>
             </div>
           </div>

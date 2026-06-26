@@ -22,8 +22,13 @@ const FILTERS: { k: StockStatus | 'all'; l: string }[] = [
   { k: 'crit', l: 'Crítico' },
 ];
 
-const EMPTY_PRODUCT: Omit<StockItem, 'id' | 'status'> = {
-  name: '', cat: '', stock: 0, min: 0, max: 0, unit: 'kg',
+const EMPTY_PRODUCT: Omit<StockItem, 'id' | 'status' | 'createdAt' | 'updatedAt'> = {
+  name: '', 
+  category: '', 
+  currentQuantity: 0, 
+  minQuantity: 0, 
+  maxQuantity: 0, 
+  unit: 'kg',
 };
 
 export default function AdminEstoquePage() {
@@ -31,14 +36,17 @@ export default function AdminEstoquePage() {
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<StockItem | null>(null);
   const [addingProduct, setAddingProduct] = useState(false);
-  const [newProduct, setNewProduct] = useState<Omit<StockItem, 'id' | 'status'>>(EMPTY_PRODUCT);
+  const [newProduct, setNewProduct] = useState<Omit<StockItem, 'id' | 'status' | 'createdAt' | 'updatedAt'>>(EMPTY_PRODUCT);
+  
   const { data: rawItems, isLoading } = useStock(filter);
   const { mutate: updateStock, isPending: updatingPending } = useUpdateStock();
   const { mutate: addStock, isPending: addingPending } = useAddStock();
   const { data: allItems } = useStock('all');
 
   const q = search.toLowerCase();
-  const items = q ? (rawItems ?? []).filter(s => s.name.toLowerCase().includes(q) || s.cat.toLowerCase().includes(q)) : rawItems;
+  const items = q 
+    ? (rawItems ?? []).filter(s => s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q)) 
+    : rawItems;
 
   const totalItems = allItems?.length ?? 0;
   const lowItems = allItems?.filter(s => s.status === 'low').length ?? 0;
@@ -55,10 +63,11 @@ export default function AdminEstoquePage() {
   }
 
   function handleAddProduct() {
-    const status: StockStatus = newProduct.stock < newProduct.min
-      ? (newProduct.stock < newProduct.min * 0.5 ? 'crit' : 'low')
+    const status: StockStatus = newProduct.currentQuantity < newProduct.minQuantity
+      ? (newProduct.currentQuantity < newProduct.minQuantity * 0.5 ? 'crit' : 'low')
       : 'ok';
-    addStock({ ...newProduct, status }, {
+    
+    addStock({ ...newProduct, status } as any, {
       onSuccess: () => {
         setAddingProduct(false);
         setNewProduct(EMPTY_PRODUCT);
@@ -116,8 +125,8 @@ export default function AdminEstoquePage() {
             <Button variant="secondary" onClick={() => setEditing(null)}>Cancelar</Button>
             <Button variant="primary" disabled={updatingPending} onClick={() => {
               if (editing) {
-                const newStatus: StockStatus = editing.stock < editing.min
-                  ? (editing.stock < editing.min * 0.5 ? 'crit' : 'low') : 'ok';
+                const newStatus: StockStatus = editing.currentQuantity < editing.minQuantity
+                  ? (editing.currentQuantity < editing.minQuantity * 0.5 ? 'crit' : 'low') : 'ok';
                 updateStock({ id: editing.id, updates: { ...editing, status: newStatus } }, { onSuccess: () => setEditing(null) });
               }
             }}>
@@ -131,15 +140,15 @@ export default function AdminEstoquePage() {
             <Field label="Estoque atual">
               <TextInput
                 type="number"
-                value={editing.stock}
-                onChange={e => setEditing({ ...editing, stock: Number(e.target.value) })}
+                value={editing.currentQuantity}
+                onChange={e => setEditing({ ...editing, currentQuantity: Number(e.target.value) })}
               />
             </Field>
             <Field label="Estoque mínimo">
               <TextInput
                 type="number"
-                value={editing.min}
-                onChange={e => setEditing({ ...editing, min: Number(e.target.value) })}
+                value={editing.minQuantity}
+                onChange={e => setEditing({ ...editing, minQuantity: Number(e.target.value) })}
               />
             </Field>
           </div>
@@ -164,19 +173,19 @@ export default function AdminEstoquePage() {
             <TextInput value={newProduct.name} onChange={e => setNewProduct(p => ({ ...p, name: e.target.value }))} placeholder="Ex: Arroz" />
           </Field>
           <Field label="Categoria">
-            <TextInput value={newProduct.cat} onChange={e => setNewProduct(p => ({ ...p, cat: e.target.value }))} placeholder="Ex: Grão" />
+            <TextInput value={newProduct.category} onChange={e => setNewProduct(p => ({ ...p, category: e.target.value }))} placeholder="Ex: Grão" />
           </Field>
           <Field label="Unidade">
             <TextInput value={newProduct.unit} onChange={e => setNewProduct(p => ({ ...p, unit: e.target.value }))} placeholder="Ex: kg" />
           </Field>
           <Field label="Estoque atual">
-            <TextInput type="number" value={newProduct.stock} onChange={e => setNewProduct(p => ({ ...p, stock: Number(e.target.value) }))} />
+            <TextInput type="number" value={newProduct.currentQuantity} onChange={e => setNewProduct(p => ({ ...p, currentQuantity: Number(e.target.value) }))} />
           </Field>
           <Field label="Estoque mínimo">
-            <TextInput type="number" value={newProduct.min} onChange={e => setNewProduct(p => ({ ...p, min: Number(e.target.value) }))} />
+            <TextInput type="number" value={newProduct.minQuantity} onChange={e => setNewProduct(p => ({ ...p, minQuantity: Number(e.target.value) }))} />
           </Field>
           <Field label="Estoque máximo">
-            <TextInput type="number" value={newProduct.max} onChange={e => setNewProduct(p => ({ ...p, max: Number(e.target.value) }))} />
+            <TextInput type="number" value={newProduct.maxQuantity} onChange={e => setNewProduct(p => ({ ...p, maxQuantity: Number(e.target.value) }))} />
           </Field>
         </div>
       </Modal>

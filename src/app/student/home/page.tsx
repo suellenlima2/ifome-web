@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { AlertCircle, CheckCircle, Check } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
@@ -18,31 +18,30 @@ import { confirmationSchema, type ConfirmationForm } from '@/schemas/confirmatio
 import { cn } from '@/utils/cn';
 
 const PERIODS = [
-  { k: 'cafe'   as const, l: 'Café'   },
-  { k: 'almoco' as const, l: 'Almoço' },
-  { k: 'jantar' as const, l: 'Jantar' },
+  { k: 'breakfast' as const, l: 'Café da Manhã' },
+  { k: 'lunch' as const, l: 'Almoço' },
+  { k: 'dinner' as const, l: 'Jantar' },
 ];
 
 const TYPES = [
-  { k: 'padrao'   as const, t: 'Refeição Padrão',   s: 'Cardápio regular do dia' },
-  { k: 'adaptada' as const, t: 'Refeição Adaptada', s: 'Baseada nas suas restrições alimentares' },
+  { k: 'standard' as const, t: 'Refeição Padrão', s: 'Cardápio regular do dia' },
+  { k: 'adapted' as const, t: 'Refeição Adaptada', s: 'Baseada nas suas restrições alimentares' },
 ];
+
+const MEAL_LABELS: Record<string, string> = {
+  breakfast: 'Café da Manhã',
+  lunch: 'Almoço',
+  dinner: 'Jantar'
+};
 
 function HomeSkeleton() {
   return (
     <div className="col gap-24" style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
-      {/* 1. A Data de Hoje */}
       <div className="col gap-4">
         <Skeleton w={280} h={36} r={8} />
       </div>
-      
-      {/* 2. Aviso da Coordenação */}
       <Skeleton h={80} r={14} />
-      
-      {/* 3. Bloco de Confirmação */}
       <Skeleton h={100} r={14} />
-      
-      {/* 4. Cardápio do Dia */}
       <div className="col gap-16">
         <Skeleton w={180} h={24} r={6} />
         <div className="col gap-24">
@@ -69,36 +68,48 @@ export default function StudentHomePage() {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const { data: profile, isLoading: isProfileLoading } = useProfile();
   const { mutate: confirmMeal, isPending } = useConfirmMeal();
+
+  const currentHour = new Date().getHours();
+  const defaultPeriod = currentHour >= 14 ? 'dinner' : 'lunch';
+
   const { control, handleSubmit, watch, reset } = useForm<ConfirmationForm>({
     resolver: zodResolver(confirmationSchema),
-    defaultValues: { period: 'almoco', type: 'padrao' },
+    defaultValues: { period: defaultPeriod, type: 'standard' },
   });
   const period = watch('period');
 
-    const handleOpenModal = (isEdit: boolean) => {
-    reset({
+  useEffect(() => {
+    if (confirmation) {
+      reset({ 
+        period: confirmation.period, 
+        type: confirmation.type 
+      });
+    } else {
+      reset({ period: defaultPeriod, type: 'standard' });
+    }
+  }, [confirmation, defaultPeriod, reset]);
 
-      period: isEdit && confirmation ? confirmation.period : 'almoco',
-
-      type: isEdit && confirmation ? confirmation.type : 'padrao'
-
-    });
-
-    setIsConfirmModalOpen(true); 
-
+  const handleOpenModal = (isEdit: boolean) => {
+    if (isEdit && confirmation) {
+      reset({
+        period: confirmation.period,
+        type: confirmation.type || 'standard'
+      });
+    } else {
+      reset({
+        period: defaultPeriod,
+        type: 'standard'
+      });
+    }
+    setIsConfirmModalOpen(true);
   };
+
   const onSubmit = (formData: ConfirmationForm) => {
-
-    confirmMeal(formData, { 
-
+    confirmMeal(formData, {
       onSuccess: () => {
-
-        setIsConfirmModalOpen(false); 
-
-      } 
-
+        setIsConfirmModalOpen(false);
+      }
     });
-
   };
 
   if (isLoading) return <HomeSkeleton />;
@@ -112,32 +123,52 @@ export default function StudentHomePage() {
     </div>
   );
 
-  const PERIOD_LABELS: Record<string, string> = { cafe: 'Café da Manhã', almoco: 'Almoço', jantar: 'Jantar' };
-  const confirmedPeriod = confirmation?.period ?? 'almoco';
-  const confirmedMeal = data!.meals.find(m => m.key === confirmedPeriod);
-  const almoco = data!.meals.find(m => m.key === 'almoco');
-  const displayMeal = confirmed ? confirmedMeal : almoco;
-  const displayLabel = confirmed ? (PERIOD_LABELS[confirmedPeriod] ?? 'Almoço') : 'Almoço';
+  const findMeal = (periodKey: string) => {
+    return data!.meals.find(m => m.period === periodKey);
+  };
+
+  const confirmedPeriod = confirmation?.period ?? defaultPeriod;
+  const confirmedMeal = findMeal(confirmedPeriod);
+  const fallbackMeal = findMeal(defaultPeriod) || data!.meals[0];
+
+  const displayMeal = confirmed ? confirmedMeal : fallbackMeal;
+  const displayLabel = displayMeal ? MEAL_LABELS[displayMeal.period] : MEAL_LABELS[confirmedPeriod];
+
+  const formattedDate = (() => {
+    try {
+      if (data!.date && data!.date.includes('-')) {
+        const [year, month, day] = data!.date.split('-').map(Number);
+        const parsedDate = new Date(year, month - 1, day);
+
+        return parsedDate.toLocaleDateString('pt-BR', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+      }
+      return data!.date;
+    } catch {
+      return data!.date;
+    }
+  })();
 
   return (
     <div className="col gap-24" style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
-      {/* 1. A Data de Hoje */}
       <div className="col gap-4">
-        <span className="h-page">{data!.date}</span>
+        <span className="h-page" style={{ textTransform: 'capitalize' }}>{formattedDate}</span>
       </div>
 
-      {/* 2. Aviso da Coordenação */}
       <div className="banner">
         <span className="banner__icon" style={{ background: 'var(--brand-soft)', color: 'var(--brand-text)', borderRadius: 8 }}>
           <AlertCircle size={16} />
         </span>
         <div className="col" style={{ flex: 1 }}>
           <div className="banner__title">Aviso da Coordenação</div>
-          <div className="banner__body">O Restaurante Universitário estará fechado nesta sexta-feira (16/05) devido ao feriado nacional.</div>
+          <div className="banner__body">Confira o cardápio de hoje e confirme sua refeição para evitar desperdícios.</div>
         </div>
       </div>
 
-      {/* 3. Bloco de Confirmação */}
       <div className="card" style={{
         padding: 24,
         background: confirmed
@@ -149,15 +180,15 @@ export default function StudentHomePage() {
         <div className="row gap-20" style={{ flexWrap: 'wrap' }}>
           <div className="col gap-8" style={{ flex: 1, minWidth: 240 }}>
             <span className="text-xs" style={{ opacity: confirmed ? .85 : 1, color: confirmed ? 'rgba(255,255,255,0.85)' : 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 600 }}>
-              {displayLabel} · {displayMeal?.time}
+              {displayLabel} {displayMeal?.startTime ? `· ${displayMeal.startTime} - ${displayMeal.endTime}` : ''}
             </span>
             <span style={{ fontSize: 24, fontWeight: 700 }}>
               {confirmed ? 'Refeição confirmada!' : 'Confirme sua presença'}
             </span>
             <span className="text-sm" style={{ opacity: .9 }}>
               {confirmed
-                ? 'Você nos ajudou a reduzir 0,5% do desperdício de alimentos hoje.'
-                : 'Confirme até as 10h00 para que possamos preparar a refeição certa.'}
+                ? 'Você nos ajudou a reduzir o desperdício de alimentos hoje.'
+                : 'Confirme para garantir sua refeição e evitar desperdícios.'}
             </span>
           </div>
           <div className="row gap-12">
@@ -175,12 +206,11 @@ export default function StudentHomePage() {
         </div>
       </div>
 
-      {/* 4. Cardápio do Dia */}
       <div className="col gap-16">
         <span className="h-section" style={{ fontSize: 20 }}>Cardápio de hoje</span>
         <div className="col gap-24">
-          {data!.meals.map(meal => (
-            <MealSection key={meal.key} meal={meal} />
+          {data!.meals.map((meal) => (
+            <MealSection key={meal.id} meal={meal} />
           ))}
         </div>
       </div>
@@ -198,7 +228,12 @@ export default function StudentHomePage() {
             <Controller name="period" control={control} render={({ field }) => (
               <div className="row gap-8">
                 {PERIODS.map(p => (
-                  <button key={p.k} type="button" onClick={() => field.onChange(p.k)} className={cn('btn', field.value === p.k ? 'btn--primary' : 'btn--secondary')}>
+                  <button
+                    key={p.k}
+                    type="button"
+                    onClick={() => field.onChange(p.k)}
+                    className={cn('btn', field.value === p.k ? 'btn--primary' : 'btn--secondary')}
+                  >
                     {p.l}
                   </button>
                 ))}
@@ -246,7 +281,9 @@ export default function StudentHomePage() {
           </div>
 
           <Button type="submit" variant="primary" size="lg" block disabled={isPending}>
-            {isPending ? 'Confirmando…' : `Confirmar presença · ${PERIODS.find(p => p.k === period)?.l}`}
+            {isPending
+              ? 'Confirmando…'
+              : `Confirmar presença · ${MEAL_LABELS[period] || period}`}
           </Button>
 
         </form>
