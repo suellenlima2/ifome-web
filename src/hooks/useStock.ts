@@ -9,7 +9,7 @@ import { toast } from 'react-toastify';
 export function useStock(filter: StockStatus | 'all' = 'all') {
   const query = useQuery({
     queryKey: ['stock'],
-    queryFn: () => fetchStock('all'),
+    queryFn: fetchStock,
     staleTime: 2 * 60_000,
   });
 

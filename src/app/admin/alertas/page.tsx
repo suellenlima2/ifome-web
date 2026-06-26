@@ -12,7 +12,7 @@ import { Field } from '@/components/ui/Field';
 import { TextInput } from '@/components/ui/TextInput';
 import { AdminTopbar } from '@/components/layout/AdminTopbar';
 import { AlertCard } from '@/components/admin/AlertCard';
-import { useAlerts } from '@/hooks/useAlerts';
+import { useAlerts, useResolveAlert } from '@/hooks/useAlerts';
 import { useStock, useUpdateStock } from '@/hooks/useStock';
 import type { StockStatus, Alert } from '@/types';
 
@@ -20,6 +20,7 @@ export default function AdminAlertasPage() {
   const { data: alertsData, isLoading, isError, refetch } = useAlerts();
   const { data: stock } = useStock('all');
   const { mutate: updateStock } = useUpdateStock();
+  const { mutate: resolveAlert, isPending: resolvingAll } = useResolveAlert();
   const [editingLimits, setEditingLimits] = useState(false);
   const [limits, setLimits] = useState<Record<string, number>>({});
 
@@ -79,7 +80,7 @@ export default function AdminAlertasPage() {
           <div className="card">
             <div className="between" style={{ padding: '16px 20px', borderBottom: '1px solid var(--divider)' }}>
               <span className="h-section">Central de Alertas · {alertsList.length} ativos</span>
-              <Button variant="ghost" size="sm" onClick={() => toast.success('Todos os alertas marcados como lidos!')}>Marcar tudo como lido</Button>
+              <Button variant="ghost" size="sm" disabled={resolvingAll} onClick={() => alertsList.forEach(a => resolveAlert(a.id))}>Marcar tudo como lido</Button>
             </div>
             <div className="col">
               {alertsList.map(a => <AlertCard key={a.id} alert={a} />)}

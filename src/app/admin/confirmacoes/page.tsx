@@ -22,7 +22,7 @@ const MEAL_LABELS: Record<string, string> = {
 
 function exportCSV(rows: any[]) {
   const header = 'Aluno,Matrícula,Refeição,Tipo,Hora';
-  const lines = rows.map(r => `${r.studentName},${r.studentId},${MEAL_LABELS[r.period] || r.period},${r.type},${r.confirmedAt}`);
+  const lines = rows.map(r => `${r.userName ?? r.studentName},${r.userEnrollment ?? r.studentId},${MEAL_LABELS[r.mealPeriod ?? r.period] || r.mealPeriod || r.period},${r.type},${r.confirmedAt}`);
   const blob = new Blob([[header, ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -56,8 +56,8 @@ function ConfirmationsContent() {
   
   const filtered = confirmations
     .filter((r: any) => typeFilter === 'all' || r.type === typeFilter)
-    .filter((r: any) => mealFilter === 'all' || r.period === mealFilter)
-    .filter((r: any) => !q || r.studentName.toLowerCase().includes(q) || r.studentId.toLowerCase().includes(q));
+    .filter((r: any) => mealFilter === 'all' || (r.mealPeriod ?? r.period) === mealFilter)
+    .filter((r: any) => !q || (r.userName ?? r.studentName ?? '').toLowerCase().includes(q) || (r.userEnrollment ?? r.studentId ?? '').toLowerCase().includes(q));
 
   if (isLoading) return (
     <>
@@ -158,18 +158,22 @@ function ConfirmationsContent() {
                     <tr key={r.id}>
                       <td>
                         <div className="row gap-12">
-                          <Avatar name={r.studentName} size="sm" />
-                          <span className="weight-600">{r.studentName}</span>
+                          <Avatar name={r.userName ?? r.studentName} size="sm" />
+                          <span className="weight-600">{r.userName ?? r.studentName}</span>
                         </div>
                       </td>
-                      <td className="mono muted">{r.studentId}</td>
-                      <td>{MEAL_LABELS[r.period] || r.period}</td>
+                      <td className="mono muted">{r.userEnrollment ?? r.studentId}</td>
+                      <td>{MEAL_LABELS[r.mealPeriod ?? r.period] || r.mealPeriod || r.period}</td>
                       <td>
                         <Tag tone={r.type === 'adapted' ? 'purple' : 'gray'}>
                           {r.type === 'adapted' ? 'Adaptada' : 'Padrão'}
                         </Tag>
                       </td>
-                      <td className="mono muted">{r.confirmedAt}</td>
+                      <td className="mono muted">
+                        {r.confirmedAt?.includes('T')
+                          ? r.confirmedAt.split('T')[1].substring(0, 5)
+                          : r.confirmedAt ?? '—'}
+                      </td>
                     </tr>
                   ))}
                   {filtered.length === 0 && (

@@ -165,7 +165,7 @@ export default function StudentHomePage() {
         </span>
         <div className="col" style={{ flex: 1 }}>
           <div className="banner__title">Aviso da Coordenação</div>
-          <div className="banner__body">O Restaurante Universitário estará fechado nesta sexta-feira (16/05) devido ao feriado nacional.</div>
+          <div className="banner__body">Confira o cardápio de hoje e confirme sua refeição para evitar desperdícios.</div>
         </div>
       </div>
 

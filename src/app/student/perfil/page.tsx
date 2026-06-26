@@ -162,7 +162,7 @@ export default function PerfilPage() {
                   {profile.name}
                 </span>
                 <span className="text-sm muted" style={{ display: 'block', marginTop: 4 }}>
-                  {profile.curso || 'Estudante'} · Matrícula {profile.matricula || 'N/A'}
+                  {profile.course || 'Estudante'} · Matrícula {profile.enrollment || 'N/A'}
                 </span>
               </div>
             </div>
