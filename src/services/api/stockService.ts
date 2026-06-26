@@ -1,7 +1,7 @@
 import { apiRequest } from './client';
 import type { StockItem, StockResponse, StockMovementsResponse } from '@/types';
 
-export async function getStock(page = 1, pageSize = 100): Promise<StockItem[]> {
+export async function getStock(page = 1, pageSize = 50): Promise<StockItem[]> {
   const response = await apiRequest<StockResponse | StockItem[]>(`/api/stock?page=${page}&pageSize=${pageSize}`);
   // Suporta resposta paginada { data: [...] } ou array direto
   if (response && (response as StockResponse).data) {

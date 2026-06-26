@@ -10,7 +10,7 @@ export async function getAlerts(page = 1, pageSize = 50): Promise<Alert[]> {
 }
 
 export async function getDemand7d(): Promise<DemandDay[]> {
-  const response = await apiRequest<Demand7dResponse | DemandDay[]>('/api/demand/7days');
+  const response = await apiRequest<Demand7dResponse | DemandDay[]>('/api/alerts/demand-7days');
   if (response && (response as Demand7dResponse).data) {
     return (response as Demand7dResponse).data;
   }
